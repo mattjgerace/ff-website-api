@@ -1,1 +1,1 @@
-web: python ffwebsite/manage.py migrate && python ffwebsite/manage.py collectstatic --no-input && gunicorn ffwebsite.wsgi
+web: python ffwebsite/manage.py migrate && python ffwebsite/manage.py && gunicorn ffwebsite.wsgi
