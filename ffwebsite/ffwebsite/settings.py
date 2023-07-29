@@ -46,7 +46,7 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ["SECURE_HSTS_INCLUDE_SUBDOMAINS"]
 
 SECURE_HSTS_PRELOAD = os.environ["SECURE_HSTS_PRELOAD"]
 
-ALLOWED_HOSTS = [ff-website-api.up.railway.app, '127.0.0.1']
+ALLOWED_HOSTS = ['ff-website-api.up.railway.app', '127.0.0.1']
 
 
 # Application definition
