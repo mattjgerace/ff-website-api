@@ -1,1 +1,1 @@
-web: python ffwebsite/manage.py migrate && python ffwebsite/manage.py && gunicorn ffwebsite/ffwebsite.wsgi
+web: python ffwebsite/manage.py migrate && python ffwebsite/manage.py && gunicorn ffwebsite/wsgi.py
