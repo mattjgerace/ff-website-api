@@ -16,7 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.urls import include, path
+from rest_framework import routers
+from leaderboard.views.leaderboard import views as leaderboard_views
+from leaderboard.views.season_settings import views as seasonsettings_views #fiximports
 
+router = routers.DefaultRouter()
+router.register(r'leaderboard', leaderboard_views.LeaderboardViewSet)
+router.register(r'seasonsettings', seasonsettings_views.SeasonSettingsViewSet)
+
+# Wire up our API using automatic URL routing.
+# Additionally, we include login URLs for the browsable API.
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('', include(router.urls)),
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]
+
+urlpatterns += router.urls
