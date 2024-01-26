@@ -31,7 +31,7 @@ class LeaderboardViewSet(ModelViewSet):
                                             ),
     ).values('team_points')[:1]
 
-    subquery_opp = WeeklyMatchups.objects.filter(team=OuterRef('team__weeklymatchups__opp'), opp=OuterRef('team')).annotate(
+    subquery_opp = WeeklyMatchups.objects.filter(team=OuterRef('team__weeklymatchups__opp'), opp=OuterRef('team'), week=OuterRef('week')).annotate(
                                             opp_points=Sum(
                                                 Case(
                                                     When(playerpoints__starter=True,  then=F('playerpoints__points')),
@@ -70,6 +70,6 @@ class LeaderboardViewSet(ModelViewSet):
     )
     
     # Order the queryset
-    queryset = queryset.values("team", "season", "pf", "pa", "wins", "losses", "ties", "weeks_won")
+    queryset = queryset.values("team", "team__first_name", "team__last_name", "season", "pf", "pa", "wins", "losses", "ties", "weeks_won")
 
     serializer_class = LeaderboardSerializer
