@@ -24,6 +24,7 @@ class TeamOwnerSLEEPER(Model):
     sleeper_team_id = encrypt(CharField())
     sleeper_roster_id = IntegerField()
 
+#need to figure out how to keep track of team player is on
 class Player(Model):
     first_name = CharField(max_length=30) #Player's First Name
     last_name = CharField(max_length=30) #Player's Last Name
@@ -31,7 +32,7 @@ class Player(Model):
     sleeper_player_id = CharField(null=True) #Sleeper ID
     espn_player_id = CharField(null=True) #ESPN ID
 
-class Draft(Model):
+class Draft(Model): #Should this be results based mixin?
     date = IntegerField(null=True)
     draft_type = CharField(null=True)
     draft_settings = JSONField(null=True) #can these be not null?
@@ -63,9 +64,13 @@ class WeeklyMatchups(Model):
     week = IntegerField() # Week the game took place
     team = ForeignKey(TeamOwnerAPP, on_delete=CASCADE) # team id
     opp = ForeignKey(TeamOwnerAPP, on_delete=CASCADE, related_name='opponent') # opp team id #this could be repetitive ...
+    score = DecimalField(max_digits=5, decimal_places=2, null=True)
     #matchup = IntegerField() # ID representing the matchup
     #roster = ArrayField(CharField()) # Player id's #don't don't need
     #starters = ArrayField(CharField()) # Player id's#probably don't need
+
+class WeeklyWinner(Model):
+    weeklymatchup = ForeignKey(WeeklyMatchups, on_delete=CASCADE)
 
 class PlayerPoints(Model):
     weeklymatchup = ForeignKey(WeeklyMatchups, on_delete=CASCADE) # Game information
@@ -73,7 +78,9 @@ class PlayerPoints(Model):
     points = DecimalField(max_digits=5, decimal_places=2) #Player Points
     starter = BooleanField() #Determines if Player Started
 
-
 class Leaderboard(Model):
     team = ForeignKey(TeamOwnerAPP, on_delete=CASCADE) # Team id
     season_settings = ForeignKey(SeasonSettings, on_delete=CASCADE)
+
+class YearlyWinner(Model):
+    leaderboard = ForeignKey(Leaderboard, on_delete=CASCADE)

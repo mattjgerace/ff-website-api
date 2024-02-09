@@ -20,30 +20,14 @@ class LeaderboardViewSet(ModelViewSet):
     # Define the base queryset
     queryset = Leaderboard.objects
 
-    queryset = queryset.select_related('team', 'season_settings').prefetch_related(Prefetch('team__weeklymatchups_set', to_attr='weeklymatchups_list'), Prefetch('team__opponent', to_attr='oppweeklymatchups_list'))
+    queryset = queryset.select_related('team', 'season_settings').prefetch_related(Prefetch('team__weeklymatchups_set', to_attr='weeklymatchups_list'), 
+                                                                                   Prefetch('team__weeklymatchups__weeklywinner_set', to_attr='weeklywinner_list'))
+    
+    subquery_opp = WeeklyMatchups.objects.filter(week=OuterRef('week'), team=OuterRef('team__weeklymatchups__opp'), opp=OuterRef('team')).values('score')[:1]
 
-    subquery_team = WeeklyMatchups.objects.filter(id=OuterRef('team__weeklymatchups__id')).annotate(
-                                            team_points=Sum(
-                                                Case(
-                                                    When(playerpoints__starter=True,  then=F('playerpoints__points')),
-                                                    default=Value(0), output_field=DecimalField()
-                                                )
-                                            ),
-    ).values('team_points')[:1]
-
-    subquery_opp = WeeklyMatchups.objects.filter(team=OuterRef('team__weeklymatchups__opp'), opp=OuterRef('team'), week=OuterRef('week')).annotate(
-                                            opp_points=Sum(
-                                                Case(
-                                                    When(playerpoints__starter=True,  then=F('playerpoints__points')),
-                                                    default=Value(0), output_field=DecimalField()
-                                                )
-                                            ),
-    ).values('opp_points')[:1]
-
-
-    queryset = queryset.annotate(team_score=Subquery(subquery_team),
-                                 week=F('team__weeklymatchups__week'),
+    queryset = queryset.annotate(week=F('team__weeklymatchups__week'),
                                  season=F('season_settings__season'),
+                                 team_score=F('team__weeklymatchups__score'),
                                  opp_score = Subquery(subquery_opp),
                                  outcome=Case(
                                     When(team_score__gt=F('opp_score'), then=Value('W')),
@@ -51,25 +35,18 @@ class LeaderboardViewSet(ModelViewSet):
                                     default=Value('T'),
                                     output_field=CharField(),
                                     ),
+                                 pf=Sum('team_score'), 
+                                 pa=Sum('opp_score'),
+                                 wins=Count('outcome', filter=Case(When(outcome='W', then=True), default=False)),
+                                 losses=Count('outcome', filter=Case(When(outcome='L', then=True), default=False)),
+                                 ties=Count('outcome', filter=Case(When(outcome='T', then=True), default=False)),
+                                 weeks_won=Count(F('team__weeklymatchups__weeklywinner'), filter=Case(When(team__weeklymatchups=F('team__weeklymatchups__weeklywinner__weeklymatchup'), then=True), default=False)),  
                                 )
-
-    max_score_subquery = queryset.filter(week=OuterRef('week')).order_by('-team_score').values('team_score')[:1]
-
-    queryset = queryset.annotate(
-        pf=Sum('team_score'), 
-        pa=Sum('opp_score'),
-        wins=Count('outcome', filter=Case(When(outcome='W', then=True), default=False)),
-        losses=Count('outcome', filter=Case(When(outcome='L', then=True), default=False)),
-        ties=Count('outcome', filter=Case(When(outcome='T', then=True), default=False)),
-        has_highest_score=Case(
-        When(team_score=Subquery(max_score_subquery), then=Value(True)),
-        default=Value(False),
-        output_field=BooleanField()
-        ),
-        weeks_won=Count('has_highest_score', filter=Case(When(has_highest_score=True, then=True), default=False)),
-    )
     
     # Order the queryset
     queryset = queryset.values("team", "team__first_name", "team__last_name", "season", "pf", "pa", "wins", "losses", "ties", "weeks_won")
 
     serializer_class = LeaderboardSerializer
+
+    for q in queryset:
+        print(q["team"], q["team__first_name"], q["team__last_name"], q["season"], q["pf"], q["pa"], q["wins"], q["losses"], q["ties"], q["weeks_won"],)
