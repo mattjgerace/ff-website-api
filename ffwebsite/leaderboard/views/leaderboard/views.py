@@ -47,6 +47,3 @@ class LeaderboardViewSet(ModelViewSet):
     queryset = queryset.values("team", "team__first_name", "team__last_name", "season", "pf", "pa", "wins", "losses", "ties", "weeks_won")
 
     serializer_class = LeaderboardSerializer
-
-    for q in queryset:
-        print(q["team"], q["team__first_name"], q["team__last_name"], q["season"], q["pf"], q["pa"], q["wins"], q["losses"], q["ties"], q["weeks_won"],)
