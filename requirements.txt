@@ -10,7 +10,7 @@ cssselect==1.2.0
 debugpy==1.8.0
 decorator==5.1.1
 dj-database-url==2.0.0
-Django==5.0.2
+Django==5.1.14
 django-appconf==1.0.6
 django-cors-headers==4.3.1
 django-cryptography==1.1
