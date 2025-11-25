@@ -1,1 +1,1 @@
-web: cd ffwebsite && python manage.py migrate && python manage.py && gunicorn ffwebsite.wsgi
+web: cd ffwebsite && python manage.py migrate && python manage.py && gunicorn ffwebsite.wsgi --bind [::]:${PORT-3000}

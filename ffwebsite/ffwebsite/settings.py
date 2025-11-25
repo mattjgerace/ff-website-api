@@ -28,28 +28,53 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ["DJANGO_DEBUG"]
+DEBUG = os.environ["DJANGO_DEBUG"] == "True"
 
 # SECURITY
-SECURE_CONTENT_TYPE_NOSNIFF = os.environ["SECURE_CONTENT_TYPE_NOSNIFF"]
+
+SECURE_CONTENT_TYPE_NOSNIFF = os.environ["SECURE_CONTENT_TYPE_NOSNIFF"] == "True"
 
 # SECURITY
-SECURE_HSTS_SECONDS = os.environ["SECURE_HSTS_SECONDS"]
+SECURE_HSTS_SECONDS = os.environ["SECURE_HSTS_SECONDS"] == "True"
 
 # SECURITY
-SECURE_SSL_REDIRECT = os.environ["SECURE_SSL_REDIRECT"]
+SECURE_SSL_REDIRECT = os.environ["SECURE_SSL_REDIRECT"] == "True"
 
-SESSION_COOKIE_SECURE = os.environ["SESSION_COOKIE_SECURE"]
+SESSION_COOKIE_SECURE = os.environ["SESSION_COOKIE_SECURE"] == "True"
 
-CSRF_COOKIE_SECURE = os.environ["CSRF_COOKIE_SECURE"]
+CSRF_COOKIE_SECURE = os.environ["CSRF_COOKIE_SECURE"] == "True"
 
-SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ["SECURE_HSTS_INCLUDE_SUBDOMAINS"]
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ["SECURE_HSTS_INCLUDE_SUBDOMAINS"] == "True"
 
-SECURE_HSTS_PRELOAD = os.environ["SECURE_HSTS_PRELOAD"]
+SECURE_HSTS_PRELOAD = os.environ["SECURE_HSTS_PRELOAD"] == "True"
 
-ALLOWED_HOSTS = ['ff-website-api.up.railway.app', '127.0.0.1']
-CSRF_TRUSTED_ORIGINS = ['https://ff-website-api.up.railway.app']
+ALLOWED_HOSTS = ['ff-website-api.up.railway.app', 'ff-website-api-dev.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['https://ff-website-api.up.railway.app', 'https://ff-website-api-dev.up.railway.app']
 
+CORS_ALLOWED_ORIGINS = ()
+
+CORS_ALLOW_METHODS = (
+    #"DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+)
+
+CORS_ALLOW_HEADERS = (
+    "accept",
+    "authorization",
+    "content-type",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "access-control-allow-headers",
+    "access-control-allow-origin",
+    "access-control-allow-credentials"
+)
+
+CORS_ORIGIN_ALLOW_ALL = True
 
 # Application definition
 
@@ -60,11 +85,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Installed Applications
+    'rest_framework',
+    'django_filters',
+    'corsheaders',
     # Created Applications
     'leaderboard.apps.LeaderboardConfig',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -106,6 +136,7 @@ DATABASES = {
         'PASSWORD': os.environ["DB_PASSWORD"],
         'HOST': os.environ["DB_HOST"], 
         'PORT': os.environ["DB_PORT"],
+        'DATABASE_URL': os.environ["DATABASE_URL"]
     }
 }
 
@@ -151,6 +182,34 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+API_AUTH_TOKEN = os.environ["API_AUTH_TOKEN"]
 
-db_from_env = dj_database_url.config(conn_max_age=500)
-DATABASES['default'].update(db_from_env)
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "log_formatter",
+        },
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "formatter": "log_formatter",
+            "filename": "logger.log",
+        }
+    },
+    "formatters": {
+        "log_formatter": {
+            "format": "{levelname}: {message} | {asctime} | {pathname}:{lineno}",
+            "style": "{",
+        }
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO"
+    }
+}
+
+# db_from_env = dj_database_url.config(conn_max_age=500)
+# DATABASES['default'].update(db_from_env)
