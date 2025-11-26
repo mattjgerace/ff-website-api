@@ -128,7 +128,7 @@ WSGI_APPLICATION = 'ffwebsite.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-if os.env["ENVIRONMENT"] != "ghactions":
+if os.environ["ENVIRONMENT"] != "test":
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',

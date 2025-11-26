@@ -16,7 +16,7 @@ jobs:
         python-version: [3.11]
 
     env:
-      ENVIRONMENT: "ghactions"
+      ENVIRONMENT: "test"
       API_AUTH_TOKEN: ""
       DATABASE_URL: ""
       DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
