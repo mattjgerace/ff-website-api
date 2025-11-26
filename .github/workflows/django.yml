@@ -17,6 +17,12 @@ jobs:
 
     env:
       ENVIRONMENT: "develop"
+      DB_NAME: ""
+      DB_USER: ""
+      DB_PASSWORD: ""
+      DB_HOST: ""
+      DB_PORT: ""
+      DATABASE_URL: ""
       DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
       SLEEPER_USER_KEY: ${{ secrets.SLEEPER_USER_KEY }}
       DJANGO_DEBUG: False
