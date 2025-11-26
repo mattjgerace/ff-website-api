@@ -15,6 +15,10 @@ jobs:
       matrix:
         python-version: [3.11]
 
+    env:
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      SLEEPER_USER_KEY: ${{ secrets.SLEEPER_USER_KEY }}
+
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
