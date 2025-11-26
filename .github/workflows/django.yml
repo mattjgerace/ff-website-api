@@ -14,6 +14,9 @@ jobs:
       max-parallel: 4
       matrix:
         python-version: [3.11]
+    defaults:
+      run:
+        working-directory: ff-website
 
     steps:
     - uses: actions/checkout@v4
@@ -26,6 +29,5 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     - name: Run Tests
-      working-directory: ff-website
       run: |
         python manage.py test
