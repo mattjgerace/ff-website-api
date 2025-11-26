@@ -17,6 +17,7 @@ jobs:
 
     env:
       ENVIRONMENT: "develop"
+      API_AUTH_TOKEN: ""
       DB_NAME: ""
       DB_USER: ""
       DB_PASSWORD: ""
