@@ -16,7 +16,7 @@ jobs:
         python-version: [3.11]
     defaults:
       run:
-        working-directory: ff-website
+        working-directory: ffwebsite
 
     steps:
     - uses: actions/checkout@v4
