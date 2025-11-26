@@ -16,8 +16,22 @@ jobs:
         python-version: [3.11]
 
     env:
+      ENVIRONMENT: "develop"
       DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
       SLEEPER_USER_KEY: ${{ secrets.SLEEPER_USER_KEY }}
+      DJANGO_DEBUG: False
+      SECURE_CONTENT_TYPE_NOSNIFF: True
+      SECURE_HSTS_SECONDS: True
+      SECURE_SSL_REDIRECT: True
+      SESSION_COOKIE_SECURE: True
+      CSRF_COOKIE_SECURE: True
+      SECURE_HSTS_INCLUDE_SUBDOMAINS: True
+      SECURE_HSTS_PRELOAD: True
+      ESPN_ID: 0
+      ESPN_SWID: 0
+      ESPN_S2: 0
+      SLEEPER_USER_ID: 0
+      SLEEPER_ID: 0
 
     steps:
     - uses: actions/checkout@v4
