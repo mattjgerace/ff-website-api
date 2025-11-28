@@ -6,7 +6,7 @@ import os
 from abc import ABC, abstractmethod
 from django.db.models import Sum, Count, Case, When, IntegerField
 
-from ffwebsite.settings import BASE_DIR
+from django.conf import settings
 from leaderboard.models import Draft, DraftPicks, Leaderboard, Player, PlayerPoints, SeasonSettings, TeamManagerAPP, WeeklyMatchups
 from leaderboard.models import PlayerESPN, PlayerSLEEPER
         
@@ -169,7 +169,7 @@ class BaseClient(ABC):
 
     def save_draft_selections(self, draft, draft_selections):
         draft_picks = []
-        with open(os.path.join(BASE_DIR, "sample.json")) as json_file:
+        with open(os.path.join(settings.BASE_DIR, "leaderboard", "tests", "sample.json")) as json_file:
             player_details = json.load(json_file)
         for selection in draft_selections:
             draft_picks.append(
@@ -202,7 +202,7 @@ class BaseClient(ABC):
 
     def save_player_scores(self, weeklymatchup, players_points, starters):
         player_points = []
-        with open(os.path.join(BASE_DIR, "sample.json")) as json_file:
+        with open(os.path.join(settings.BASE_DIR, "leaderboard", "tests", "sample.json")) as json_file:
             player_details = json.load(json_file)
         for player_id in players_points.keys():
             player = self.save_new_player(player_id, player_details)

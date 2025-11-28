@@ -12,13 +12,10 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import dj_database_url
 from pathlib import Path
-from dotenv import load_dotenv
 import os
 
-load_dotenv()
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 # Quick-start development settings - unsuitable for production
@@ -26,27 +23,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ["DJANGO_DEBUG"] == "True"
-
-# SECURITY
-
-SECURE_CONTENT_TYPE_NOSNIFF = os.environ["SECURE_CONTENT_TYPE_NOSNIFF"] == "True"
-
-# SECURITY
-SECURE_HSTS_SECONDS = os.environ["SECURE_HSTS_SECONDS"] == "True"
-
-# SECURITY
-SECURE_SSL_REDIRECT = os.environ["SECURE_SSL_REDIRECT"] == "True"
-
-SESSION_COOKIE_SECURE = os.environ["SESSION_COOKIE_SECURE"] == "True"
-
-CSRF_COOKIE_SECURE = os.environ["CSRF_COOKIE_SECURE"] == "True"
-
-SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ["SECURE_HSTS_INCLUDE_SUBDOMAINS"] == "True"
-
-SECURE_HSTS_PRELOAD = os.environ["SECURE_HSTS_PRELOAD"] == "True"
 
 ALLOWED_HOSTS = ['ff-website-api.up.railway.app', 'ff-website-api-dev.up.railway.app']
 CSRF_TRUSTED_ORIGINS = ['https://ff-website-api.up.railway.app', 'https://ff-website-api-dev.up.railway.app']
@@ -123,23 +99,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'ffwebsite.wsgi.application'
-
-
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-if os.environ["ENVIRONMENT"] != "test":
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': os.environ["DB_NAME"], 
-            'USER': os.environ["DB_USER"], 
-            'PASSWORD': os.environ["DB_PASSWORD"],
-            'HOST': os.environ["DB_HOST"], 
-            'PORT': os.environ["DB_PORT"],
-            'DATABASE_URL': os.environ["DATABASE_URL"]
-        }
-    }
 
 
 # Password validation
