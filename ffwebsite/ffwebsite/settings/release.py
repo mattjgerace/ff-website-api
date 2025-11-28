@@ -12,7 +12,6 @@ DATABASES = {
         'PASSWORD': os.environ["DB_PASSWORD"],
         'HOST': os.environ["DB_HOST"], 
         'PORT': os.environ["DB_PORT"],
-        'DATABASE_URL': os.environ["DATABASE_URL"]
     }
 }
 
