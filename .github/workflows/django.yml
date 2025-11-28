@@ -31,7 +31,7 @@ jobs:
 
     env:
       ENVIRONMENT: "test"
-      DJANGO_SETTINGS_MODULE: ff_website.settings.test
+      DJANGO_SETTINGS_MODULE: ffwebsite.settings.test
       DATABASE_URL: postgres://test_user:test_password@localhost:5432/test_db
       API_AUTH_TOKEN: ""
       DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
