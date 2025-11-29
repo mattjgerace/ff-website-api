@@ -19,16 +19,12 @@ DATABASES = {
     "default": dj_database_url.parse(os.environ["DATABASE_URL"])
 }
 
-DEBUG = False
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
 SECURE_HSTS_SECONDS = 60
-
-SECURE_SSL_REDIRECT = True
 
 SESSION_COOKIE_SECURE = True
 
