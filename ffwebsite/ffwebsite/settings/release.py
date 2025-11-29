@@ -19,6 +19,10 @@ DATABASES = {
     "default": dj_database_url.parse(os.environ["DATABASE_URL"])
 }
 
+DATABASES["default"]["OPTIONS"] = {
+    "connect_timeout": 10
+}
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
