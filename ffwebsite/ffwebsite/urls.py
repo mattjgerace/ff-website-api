@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path
 from django.urls import include, path
 from rest_framework import routers
-from leaderboard.views.data.views import PopulateNewSeasonView, PopulateNewTeamsView, PopulateNewDraftView, PopulateNewMatchupsView
+from leaderboard.views.data.views import PopulateNewSeasonView, PopulateNewTeamsView, PopulateNewDraftView, PopulateNewMatchupsView, PopulatePlayerCollection
 #from leaderboard.views.leaderboard import views as leaderboard_views
 #from leaderboard.views.draft import views as draft_views
 #from leaderboard.views.weekly_matchups import views as weeklymatchups_views
@@ -38,6 +38,7 @@ urlpatterns = [
     path("api/data/populate-teams/", PopulateNewTeamsView.as_view(), name="populate_teams"),
     path("api/data/populate-draft/", PopulateNewDraftView.as_view(), name="populate_draft"),
     path("api/data/populate-matchups/", PopulateNewMatchupsView.as_view(), name="populate_matchups"),
+    path("api/data/populate-player-collection/", PopulatePlayerCollection.as_view(), name="populate_player_collection"),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]
 

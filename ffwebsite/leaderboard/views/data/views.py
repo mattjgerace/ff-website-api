@@ -1,3 +1,7 @@
+from datetime import date, datetime
+from enum import Enum
+from django.conf import settings
+from pymongo import ASCENDING, UpdateOne
 from leaderboard.tasks import HasAPIToken
 from leaderboard.views.data.espn_connection import EspnClient
 from leaderboard.views.data.sleeper_connection import SleeperClient
@@ -6,6 +10,17 @@ from leaderboard.models import Draft, Leaderboard, SeasonSettings, WeeklyMatchup
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+
+def to_json_safe(value):
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    if isinstance(value, list):
+        return [to_json_safe(v) for v in value]
+    if isinstance(value, dict):
+        return {k: to_json_safe(v) for k, v in value.items()}
+    return value
 
 def get_client(platform, season):
     match platform:
@@ -145,3 +160,35 @@ class PopulateNewMatchupsView(APIView):
                     result = f"Matchups for week {week} of the {season} season are populated!"
 
             return Response({"message": result}, status=status.HTTP_201_CREATED)
+        
+class PopulatePlayerCollection(APIView):
+    permission_classes = [HasAPIToken]
+
+    def post(self, request, *args, **kwargs):
+        db = settings.MONGO_DB              
+        players_collection = db["players"]
+
+        db.drop_collection("players")
+
+        client = get_client("sleeper", "2023")
+
+        players = client.get_players_api()
+
+        operations = []
+
+        for p in players.keys():
+            player_data = to_json_safe(players[p].__dict__)
+            
+            doc = {
+                "_id": player_data["player_id"],
+                **player_data
+            }
+
+            operations.append(
+                UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True)
+            )
+
+        players_collection.bulk_write(operations)
+
+        result = f"Player data updated successfully."
+        return Response({"message": result}, status=status.HTTP_201_CREATED)
