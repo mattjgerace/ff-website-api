@@ -11,9 +11,6 @@ class PopulatePlayerCollectionViewTests(TestCase):
     def setUp(self):
         self.auth = settings.API_AUTH_TOKEN
 
-    def tearDown(self):
-        self.env_patcher.stop()
-
     @patch("leaderboard.views.data.sleeper_connection.SleeperClient.get_players_api")
     def test_populate_player_collection(self, mock_sleeperclient_get_players_api=None):
         mock_sleeperclient_get_players_api.return_value = create_mock_players_api_return()
