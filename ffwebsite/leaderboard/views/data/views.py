@@ -1,7 +1,8 @@
 from datetime import date, datetime
 from enum import Enum
 from django.conf import settings
-from pymongo import ASCENDING, UpdateOne
+from pymongo import UpdateOne
+from ffwebsite.utils import wait_for_mongo
 from leaderboard.tasks import HasAPIToken
 from leaderboard.views.data.espn_connection import EspnClient
 from leaderboard.views.data.sleeper_connection import SleeperClient
@@ -12,6 +13,8 @@ from rest_framework.response import Response
 from rest_framework import status
 
 def to_json_safe(value):
+    if hasattr(value, '__dict__'):
+        return to_json_safe(value.__dict__)
     if isinstance(value, Enum):
         return value.value
     if isinstance(value, (datetime, date)):
@@ -22,12 +25,12 @@ def to_json_safe(value):
         return {k: to_json_safe(v) for k, v in value.items()}
     return value
 
-def get_client(platform, season):
+def get_client(platform, season, mongodb=None):
     match platform:
         case "sleeper":
-            return SleeperClient(season)
+            return SleeperClient(season, mongodb)
         case "espn":
-            return EspnClient(season)
+            return EspnClient(season, mongodb)
         case _:
             return None
 
@@ -113,7 +116,12 @@ class PopulateNewDraftView(APIView):
                     {"error": f"Teams are not yet populated for the {season} season"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-                client = get_client(season_settings.platform, season_settings.season)
+                mongodb = settings.MONGO_DB
+                if wait_for_mongo(mongodb) == False:
+                    return Response({"error": f"No mongodb connection was able to be established"},
+                                    status=status.HTTP_400_BAD_REQUEST,
+                                    )
+                client = get_client(season_settings.platform, season_settings.season, mongodb)
                 client.process_draft(season_settings)
 
         result = f"Draft for {season} is populated!"
@@ -155,7 +163,12 @@ class PopulateNewMatchupsView(APIView):
                                 status=status.HTTP_400_BAD_REQUEST,
                                 )
                 else:
-                    client = get_client(season_settings.platform, season_settings.season)
+                    mongodb = settings.MONGO_DB
+                    if wait_for_mongo(mongodb) == False:
+                        return Response({"error": f"No mongodb connection was able to be established"},
+                                        status=status.HTTP_400_BAD_REQUEST,
+                                        )
+                    client = get_client(season_settings.platform, season_settings.season, mongodb)
                     client.process_week(season_settings, week)
                     result = f"Matchups for week {week} of the {season} season are populated!"
 
@@ -165,19 +178,22 @@ class PopulatePlayerCollection(APIView):
     permission_classes = [HasAPIToken]
 
     def post(self, request, *args, **kwargs):
-        db = settings.MONGO_DB              
-        players_collection = db["players"]
+        mongodb = settings.MONGO_DB
+        if wait_for_mongo(mongodb) == False:
+            return Response({"error": f"No mongodb connection was able to be established"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                            )
 
-        db.drop_collection("players")
+        players_collection = mongodb["players"]
+        mongodb.drop_collection("players")
 
         client = get_client("sleeper", "2023")
-
         players = client.get_players_api()
 
         operations = []
 
         for p in players.keys():
-            player_data = to_json_safe(players[p].__dict__)
+            player_data = to_json_safe(players[p])
             
             doc = {
                 "_id": player_data["player_id"],

@@ -2,9 +2,9 @@ name: Django CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "prod" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "prod" ]
 
 jobs:
   build:
@@ -24,6 +24,18 @@ jobs:
             --health-interval=10s
             --health-timeout=5s
             --health-retries=5
+      mongo:
+        image: mongo:6
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: rootpassword
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd="mongosh --username root --password rootpassword --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     strategy:
       max-parallel: 4
       matrix:
@@ -33,6 +45,8 @@ jobs:
       ENVIRONMENT: "test"
       DJANGO_SETTINGS_MODULE: ffwebsite.settings.test
       DATABASE_URL: postgres://test_user:test_password@localhost:5432/test_db
+      MONGO_URL: mongodb://root:rootpassword@localhost:27017
+      MONGO_DB_NAME: test_mongo
       API_AUTH_TOKEN: ""
       DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
       SLEEPER_USER_KEY: ${{ secrets.SLEEPER_USER_KEY }}

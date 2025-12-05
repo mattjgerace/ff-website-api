@@ -1,3 +1,8 @@
+import json
+import os
+from django.conf import settings
+
+
 def create_mock_league_id_return(league_id=None):
     return league_id if league_id else "1"
 
@@ -58,3 +63,8 @@ def create_mock_matchups_return():
             "starters": {f"{i}0{j}": True for j in range(0, 10)},
         })
     return week_matchups_results
+
+def create_mock_players_api_return():
+    with open(os.path.join(settings.BASE_DIR, "leaderboard", "tests", "sample.json")) as json_file:
+            players = json.load(json_file)
+    return players

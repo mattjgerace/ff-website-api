@@ -6,19 +6,22 @@ import os
 from abc import ABC, abstractmethod
 from django.db.models import Sum, Count, Case, When, IntegerField
 
-from django.conf import settings
 from leaderboard.models import Draft, DraftPicks, Leaderboard, Player, PlayerPoints, SeasonSettings, TeamManagerAPP, WeeklyMatchups
 from leaderboard.models import PlayerESPN, PlayerSLEEPER
         
 class BaseClient(ABC):
-    def __init__(self, season):
+    def __init__(self, season, mongodb):
         self._set_platform()
         self._set_season(season)
+        self._set_mongodb(mongodb)
         self._set_models()
         self.player_model_possibilities = [PlayerSLEEPER, PlayerESPN]
 
-    def _set_season(self, season) -> str:
+    def _set_season(self, season):
         self.season = season
+
+    def _set_mongodb(self, mongodb):
+        self.mongodb = mongodb
 
     def set_league_id(self, league_id) -> str:
         if league_id:
@@ -126,13 +129,14 @@ class BaseClient(ABC):
         self.save_draft_order(draft_info, season_settings)
         self.save_draft_selections(draft, self.get_draft_selections())
 
-    def save_new_player(self, player_id, player_details):
+    def save_new_player(self, player_id):
         if self.player_model.objects.filter(external_player_id=player_id).exists():
             return self.player_model.objects.get(external_player_id=player_id).player
         else:
-            first_name = player_details[player_id]["first_name"]
-            last_name = player_details[player_id]["last_name"]
-            position = player_details[player_id]["position"]
+            player_details = self.mongodb["players"].find_one({"_id": player_id})
+            first_name = player_details["first_name"]
+            last_name = player_details["last_name"]
+            position = player_details["position"]
             if Player.objects.filter(first_name=first_name, last_name=last_name, position=position).exists():
                 existing_players = Player.objects.filter(first_name=first_name, last_name=last_name, position=position).all()
                 for model in self.player_model_possibilities:
@@ -169,14 +173,12 @@ class BaseClient(ABC):
 
     def save_draft_selections(self, draft, draft_selections):
         draft_picks = []
-        with open(os.path.join(settings.BASE_DIR, "leaderboard", "tests", "sample.json")) as json_file:
-            player_details = json.load(json_file)
         for selection in draft_selections:
             draft_picks.append(
                 DraftPicks(
                     draft=draft,
                     team=self.get_team_manager(selection["roster_id"]),
-                    player=self.save_new_player(selection["player_id"], player_details),
+                    player=self.save_new_player(selection["player_id"]),
                     round_num=selection["round"] if not (self.season == 2023 and (selection["player_id"] == '1689' or selection["player_id"] == '5849')) else (10 if selection["player_id"] == '1689' else 12),
                     pick_num=selection["pick_no"] if not (self.season == 2023 and (selection["player_id"] == '1689' or selection["player_id"] == '5849')) else (119 if selection["player_id"] == '1689' else 144) 
                 )
@@ -202,10 +204,8 @@ class BaseClient(ABC):
 
     def save_player_scores(self, weeklymatchup, players_points, starters):
         player_points = []
-        with open(os.path.join(settings.BASE_DIR, "leaderboard", "tests", "sample.json")) as json_file:
-            player_details = json.load(json_file)
         for player_id in players_points.keys():
-            player = self.save_new_player(player_id, player_details)
+            player = self.save_new_player(player_id)
             player_points.append(
                 PlayerPoints(
                     weeklymatchup=weeklymatchup,

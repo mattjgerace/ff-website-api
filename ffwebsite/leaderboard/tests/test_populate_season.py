@@ -10,8 +10,8 @@ from leaderboard.tests.utils import create_mock_league_id_return, create_mock_se
 class PopulateNewSeasonViewTests(TestCase):
     def setUp(self):
         self.auth = settings.API_AUTH_TOKEN
-        self.env_patcher=patch.dict(os.environ, {"ENVIRONMENT": "local"}, clear=False)
-        self.env_patcher.start()
+        #self.env_patcher=patch.dict(os.environ, {"ENVIRONMENT": "local"}, clear=False)
+        #self.env_patcher.start()
 
     def tearDown(self):
         self.env_patcher.stop()
