@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from enum import Enum
+from bson import ObjectId
 from django.conf import settings
 from pymongo import UpdateOne
 from ffwebsite.utils import wait_for_mongo
@@ -195,7 +196,7 @@ class PopulatePlayerCollection(APIView):
             player_data = to_json_safe(players[p])
             
             doc = {
-                "_id": str(player_data["player_id"]),
+                "_id": ObjectId(str(player_data["player_id"])),
                 **player_data
             }
 
