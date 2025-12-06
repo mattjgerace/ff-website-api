@@ -195,7 +195,7 @@ class PopulatePlayerCollection(APIView):
             player_data = to_json_safe(players[p])
             
             doc = {
-                "_id": player_data["player_id"],
+                "_id": str(player_data["player_id"]),
                 **player_data
             }
 
