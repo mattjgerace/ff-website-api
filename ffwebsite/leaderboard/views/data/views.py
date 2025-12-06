@@ -199,7 +199,7 @@ class PopulatePlayerCollection(APIView):
                 "_id": str(player_data["player_id"]),
                 **player_data
             }
-            print(f"ID Type: {type(doc["_id"])}")
+            print(f"ID Type: {type(doc['_id'])}")
             operations.append(
                 UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True)
             )
