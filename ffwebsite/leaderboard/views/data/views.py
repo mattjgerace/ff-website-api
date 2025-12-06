@@ -183,7 +183,6 @@ class PopulatePlayerCollection(APIView):
             return Response({"error": f"No mongodb connection was able to be established"},
                             status=status.HTTP_400_BAD_REQUEST,
                             )
-        print("A")
         players_collection = mongodb["players"]
         mongodb.drop_collection("players")
 
@@ -205,7 +204,6 @@ class PopulatePlayerCollection(APIView):
             )
 
         players_collection.bulk_write(operations)
-        print(players_collection.count_documents({}))
 
         result = f"Player data updated successfully."
         return Response({"message": result}, status=status.HTTP_201_CREATED)
