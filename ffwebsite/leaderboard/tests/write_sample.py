@@ -45,6 +45,7 @@ for i in range(1, 13):
         "news_updated": 1,
         "number": 1,
         "pandascore_id": None,
+        "_id": int(f"{i}0{j}"),
         "player_id": int(f"{i}0{j}"),
         "position": "QB",
         "practice_description": None,
@@ -112,6 +113,7 @@ for i in range(1, 13):
         "team": "SEA",
         "weight": "1",
         "yahoo_id": str(662+i),
-        "years_exp": 1
+        "years_exp": 1,
+        "_id": int(f"{i}0{j}")
     }
     write_sample_json(data)
