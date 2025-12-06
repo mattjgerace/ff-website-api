@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from django.urls import reverse
 
-from leaderboard.tests.utils import create_mock_draft_return, create_mock_draft_selections_return, create_mock_league_id_return, create_mock_matchups_return, create_mock_season_settings_return, create_mock_rosters_return
+from leaderboard.tests.utils import create_mock_draft_return, create_mock_draft_selections_return, create_mock_league_id_return, create_mock_matchups_return, create_mock_players_api_return, create_mock_season_settings_return, create_mock_rosters_return
 from leaderboard.models import SeasonSettings
 from leaderboard.views.data.sleeper_connection import SleeperClient
 
@@ -25,6 +25,10 @@ class PopulateNewMatchupsViewTests(TestCase):
         self.mock_sleeper_managers = patcher_sleeper_league_api.start()
         self.addCleanup(patcher_sleeper_league_api.stop)
 
+        patcher_sleeper_get_players_api = patch("leaderboard.views.data.sleeper_connection.SleeperClient.get_players_api")
+        self.mock_sleeper_players_api = patcher_sleeper_get_players_api.start()
+        self.addCleanup(patcher_sleeper_get_players_api.stop)
+
     def set_data(self, platform, season, league_id):
         self.platform = platform
         self.season = season
@@ -42,11 +46,18 @@ class PopulateNewMatchupsViewTests(TestCase):
         data = {"season": season}
         self.mock_sleeper_managers.return_value = create_mock_rosters_return()
         self.client.post(reverse("populate_teams"), data=data, HTTP_AUTHORIZATION=self.auth)
+    
+    def save_mock_players(self):
+        data = {}
+        self.mock_sleeper_players_api.return_value = create_mock_players_api_return()
+        self.client.post(reverse("populate_player_collection"), data=data, HTTP_AUTHORIZATION=self.auth)
+
 
     @patch("leaderboard.views.data.sleeper_connection.SleeperClient.get_matchups")
     def test_new_matchups(self, mock_sleeperclient_get_matchups=None):
         self.save_mock_season_settings("sleeper", "2023", "1")
         self.save_mock_managers(self.season)
+        self.save_mock_players()
         mock_sleeperclient_get_matchups.return_value = create_mock_matchups_return()
 
         self.week = "1"
