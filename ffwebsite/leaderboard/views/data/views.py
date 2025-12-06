@@ -184,7 +184,7 @@ class PopulatePlayerCollection(APIView):
                             status=status.HTTP_400_BAD_REQUEST,
                             )
         players_collection = mongodb["players"]
-        mongodb.drop_collection("players")
+        #mongodb.drop_collection("players")
 
         client = get_client("sleeper", "2023")
         players = client.get_players_api()
