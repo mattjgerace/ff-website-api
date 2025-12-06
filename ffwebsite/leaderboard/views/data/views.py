@@ -184,8 +184,8 @@ class PopulatePlayerCollection(APIView):
             return Response({"error": f"No mongodb connection was able to be established"},
                             status=status.HTTP_400_BAD_REQUEST,
                             )
+        mongodb.drop_collection("players")
         players_collection = mongodb["players"]
-        #mongodb.drop_collection("players")
 
         client = get_client("sleeper", "2023")
         players = client.get_players_api()
@@ -196,10 +196,10 @@ class PopulatePlayerCollection(APIView):
             player_data = to_json_safe(players[p])
             
             doc = {
-                "_id": int(player_data["player_id"]),
+                "_id": player_data["player_id"],
                 **player_data
             }
-
+            print(type(doc["_id"]))
             operations.append(
                 UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True)
             )
