@@ -134,7 +134,7 @@ class BaseClient(ABC):
         if self.player_model.objects.filter(external_player_id=player_id).exists():
             return self.player_model.objects.get(external_player_id=player_id).player
         else:
-            player_details = self.mongodb["players"].find_one({"_id": ObjectId(player_id)})
+            player_details = self.mongodb["players"].find_one({"_id": str(player_id)})
             first_name = player_details["first_name"]
             last_name = player_details["last_name"]
             position = player_details["position"]
