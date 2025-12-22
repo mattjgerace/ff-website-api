@@ -99,10 +99,21 @@ class WeeklyMatchups(Model):
     
     #matchup = IntegerField() # ID representing the matchup
     #roster = ArrayField(CharField()) # Player id's #don't don't need
-    #starters = ArrayField(CharField()) # Player id's#probably don't need
+    #starters = ArrayField(CharField()) # Player id's #probably don't need
+
+class ExhibitionWeeklyMatchups(Model):
+    season_settings = ForeignKey(SeasonSettings, on_delete=CASCADE)
+    week = IntegerField()
+    team = ForeignKey(TeamManagerAPP, on_delete=CASCADE)
+    opp = ForeignKey(TeamManagerAPP, null=True, on_delete=CASCADE, related_name='exhibition_opponent') #opp team id--this could be repetitive ...
+    score = DecimalField(max_digits=5, decimal_places=2, null=True)
+    result = CharField()
+    weekly_winner = BooleanField(default=False)
+    playoff = BooleanField(default=False)
 
 class PlayerPoints(Model):
     weeklymatchup = ForeignKey(WeeklyMatchups, null=True, on_delete=CASCADE)
+    exhibtion = ForeignKey(ExhibitionWeeklyMatchups, default=None, null=True, on_delete=CASCADE)
     player = ForeignKey(Player, on_delete=CASCADE)
     points = DecimalField(max_digits=5, decimal_places=2)
     starter = BooleanField()

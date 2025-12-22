@@ -26,18 +26,23 @@ class LeaderboardViewSet(ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         season = self.request.query_params.get('season_settings__season', None)
-        playoff = self.request.query_params.get('seed', None)
+        playoff = self.request.query_params.get('playoff', None)
         if season is not None:
             queryset = queryset.filter(season_settings__season=season)
         if playoff is not None:
-            queryset = queryset.filter(seed__lte=playoff)
+            print("HELLO")
+            queryset = queryset.filter(seed__lte=6)
 
         queryset = queryset.select_related('team', 'season_settings').prefetch_related(Prefetch('team__weeklymatchups_set', to_attr='weeklymatchups_list'))
         
         subquery_team = WeeklyMatchups.objects.filter(week=OuterRef('week'), season_settings__season=OuterRef('season'), team=OuterRef('team'), opp=OuterRef('team__weeklymatchups__opp')).values('score')[:1]
         subquery_opp = WeeklyMatchups.objects.filter(week=OuterRef('week'), season_settings__season=OuterRef('season'), team=OuterRef('team__weeklymatchups__opp'), opp=OuterRef('team')).values('score')[:1]
         subquery_result = WeeklyMatchups.objects.filter(week=OuterRef('week'), season_settings__season=OuterRef('season'), team=OuterRef('team'), opp=OuterRef('team__weeklymatchups__opp')).values('result')[:1]
-        subquery_ww = WeeklyMatchups.objects.filter(week=OuterRef('week'), season_settings__season=OuterRef('season'), team=OuterRef('team'), opp=OuterRef('team__weeklymatchups__opp')).values('weekly_winner')[:1]
+        subquery_ww = WeeklyMatchups.objects.filter(team=OuterRef('team'), season_settings__season=OuterRef('season')).values('team').annotate(
+                      weeks_won=Count(F('weekly_winner'), filter=Case(When(weekly_winner=True, then=True), default=False))).values('weeks_won')[:1]
+        
+        #subquery_ww = WeeklyMatchups.objects.filter(week=OuterRef('week'), season_settings__season=OuterRef('season'), team=OuterRef('team'), opp=OuterRef('team__weeklymatchups__opp')).values('weekly_winner')[:1]
+        
         # subquery_sw = WeeklyMatchups.objects.filter(season_settings__season=OuterRef('season')).values('team').annotate(
         #     pf=Sum('score'),
         #     max_pf=Max(F('pf')),
@@ -54,11 +59,18 @@ class LeaderboardViewSet(ModelViewSet):
                                     wins=Count(F('result'), filter=Case(When(result="W", then=True), default=False)),
                                     losses=Count(F('result'), filter=Case(When(result="L", then=True), default=False)),
                                     ties=Count(F('result'), filter=Case(When(result="T", then=True), default=False)),
-                                    weekly_winner=Subquery(subquery_ww),
-                                    weeks_won=Count('weekly_winner', filter=Case(When(weekly_winner=True, then=True), default=False)),
+                                    weeks_won=Subquery(subquery_ww)
+
+                                    #weekly_winner=Subquery(subquery_ww),
+                                    #weeks_won=Count('weekly_winner', filter=Case(When(weekly_winner=True, then=True), default=False)),
                                     #seasons_won=Subquery(subquery_sw)
                                     )
-        #print(queryset.values('weekly_winner'))
+
+        if playoff is None:
+            queryset = queryset.order_by("seed")
+        else:
+            queryset = queryset.order_by("seed", "standing")
+        
         queryset=queryset.values('team__id', 'season', 'team', "team__first_name", "team__last_name", "division", "division_standing", "pf", "pa", "wins", "losses", "ties", "seed", "weeks_won", "standing", "draft_pick")
         return queryset
     
@@ -99,7 +111,7 @@ class LeaderboardViewSet(ModelViewSet):
                                     weeks_won=Subquery(subquery_ww),
                                     seasons_won=Count(F('season_winner'), filter=Case(When(season_winner=True, then=True), default=False)),
                                     divisions_won=Count(F('division_winner'), filter=Case(When(division_winner=True, then=True), default=False))
-                                    ).filter(team__active=True).values("team__id", "team__first_name", "team__last_name", "pf", "pa", "wins", "losses", "ties", "avgseed", "avgstanding", "avgdraft_pick", "championships", "seasons_won", "divisions_won", "weeks_won")
+                                    ).filter(team__active=True).order_by("-championships", "-wins", "avgstanding").values("team__id", "team__first_name", "team__last_name", "pf", "pa", "wins", "losses", "ties", "avgseed", "avgstanding", "avgdraft_pick", "championships", "seasons_won", "divisions_won", "weeks_won")
         return JsonResponse(AllTimeLeaderboardSerializer(queryset, many=True).data, safe=False)
 
     # # Define the base queryset

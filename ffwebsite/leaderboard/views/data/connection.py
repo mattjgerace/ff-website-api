@@ -4,10 +4,9 @@ import json
 import os
 
 from abc import ABC, abstractmethod
-from bson import ObjectId
 from django.db.models import Sum, Count, Case, When, IntegerField
 
-from leaderboard.models import Draft, DraftPicks, Leaderboard, Player, PlayerPoints, SeasonSettings, TeamManagerAPP, WeeklyMatchups
+from leaderboard.models import Draft, DraftPicks, ExhibitionWeeklyMatchups, Leaderboard, Player, PlayerPoints, SeasonSettings, TeamManagerAPP, WeeklyMatchups
 from leaderboard.models import PlayerESPN, PlayerSLEEPER
         
 class BaseClient(ABC):
@@ -83,7 +82,7 @@ class BaseClient(ABC):
     def save_managers(self, roster_info, season_settings):
         leaderboards = []
         platform_teams = []
-        for roster in roster_info:
+        for i, roster in enumerate(roster_info):
             if not self.manager_model.objects.filter(team_id = roster["roster_id"]).exists():
                 user_key = json.loads(os.environ.get("SLEEPER_USER_KEY", "{}"))
                 name = user_key[str(roster["roster_id"])].split()
@@ -114,8 +113,7 @@ class BaseClient(ABC):
                 #losses = 0,
                 #ties = 0,
                 division = season_settings.division_mapping.get(str(roster["settings"]["division"]), "N/A"),
-                seed = 12-roster["roster_id"], #need to fix
-                standing = roster["roster_id"],
+                seed = i+1, #need to fix
                 division_standing = 1,
             )
             )
@@ -196,20 +194,20 @@ class BaseClient(ABC):
         if int(week) < season_settings.playoff_week_start:
             self.save_regular_season_standings(season_settings)
             if int(week) == season_settings.playoff_week_start-1:
-                division_winners = Leaderboard.objects.filter(
-                    division_standing=1, season_settings_id=season_settings.pk
-                ).all()
-                for division_winner in division_winners:
-                    division_winner.division_winner = True
-                    division_winner.save()
+                self.save_season_leader_pf(season_settings)
+                self.save_division_winners(season_settings)
+                self.save_standing_non_playoff(season_settings)
+        else:
+             self.save_standing_playoff(season_settings, week)
 
-    def save_player_scores(self, weeklymatchup, players_points, starters):
+    def save_player_scores(self, weeklymatchup, players_points, starters, is_exhibition):
         player_points = []
         for player_id in players_points.keys():
             player = self.save_new_player(player_id)
             player_points.append(
                 PlayerPoints(
-                    weeklymatchup=weeklymatchup,
+                    weeklymatchup=None if is_exhibition else weeklymatchup,
+                    exhibtion=weeklymatchup if is_exhibition else None,
                     player=player,
                     points=players_points[player_id],
                     starter=True if player_id in starters else False,
@@ -230,17 +228,28 @@ class BaseClient(ABC):
                     team_manager = self.get_team_manager(matchup["roster_id"])
                     opp_roster_id = games[matchup["matchup_id"]-1][0] if games[matchup["matchup_id"]-1][0] != matchup["roster_id"] else games[matchup["matchup_id"]-1][1]
                     team_manager_opp = self.get_team_manager(opp_roster_id)
-                    weeklymatchup = WeeklyMatchups(
-                        week=week,
-                        season_settings=season_settings,
-                        team=team_manager,
-                        opp=team_manager_opp,
-                        playoff=True if week >= season_settings.playoff_week_start else False
-                        #roster=matchup.players, #might not need
-                        #starters=matchup.starters, #might not need
-                        )
+                    if week >= season_settings.playoff_week_start and Leaderboard.objects.get(season_settings=season_settings, team=team_manager).standing:
+                        weeklymatchup = ExhibitionWeeklyMatchups(
+                            week=week,
+                            season_settings=season_settings,
+                            team=team_manager,
+                            opp=team_manager_opp,
+                            playoff=True if week >= season_settings.playoff_week_start else False
+                            )
+                        is_exhibition = True
+                    else:
+                        weeklymatchup = WeeklyMatchups(
+                            week=week,
+                            season_settings=season_settings,
+                            team=team_manager,
+                            opp=team_manager_opp,
+                            playoff=True if week >= season_settings.playoff_week_start else False
+                            #roster=matchup.players, #might not need
+                            #starters=matchup.starters, #might not need
+                            )
+                        is_exhibition = False
                     weeklymatchup.save()
-                    self.save_player_scores(weeklymatchup, matchup["players_points"], matchup["starters"])
+                    self.save_player_scores(weeklymatchup, matchup["players_points"], matchup["starters"], is_exhibition)
 
     def save_team_scores(self, season_settings, week):
         weekly_matchups = WeeklyMatchups.objects.filter(week=week, season_settings=season_settings)
@@ -258,18 +267,18 @@ class BaseClient(ABC):
             weeklywinner.weekly_winner = True
             weeklywinner.save()
 
-        #Calculate Season Leader in Points
+    def save_season_leader_pf(self, season_settings):
         season_matchups = WeeklyMatchups.objects.filter(playoff=False, season_settings=season_settings.pk)
         scores = {}
         for matchup in season_matchups:
-            if matchup not in scores:
-                scores[matchup] = matchup.score
+            if matchup.team not in scores:
+                scores[matchup.team] = matchup.score
             else:
-                scores[matchup] += matchup.score
+                scores[matchup.team] += matchup.score
         seasonwinner = max(scores, key=scores.get)
         season_teams = Leaderboard.objects.filter(season_settings=season_settings.pk)
         for team in season_teams:
-            if seasonwinner.team == team.team:
+            if seasonwinner == team.team:
                 team.season_winner = True
             else:
                 team.season_winner = False
@@ -292,109 +301,250 @@ class BaseClient(ABC):
                 matchup.result = "L"
             #lb.save()
             matchup.save()
-    
-    def save_regular_season_standings(self, season_settings):
-        #print(season_settings.__dict__)
 
+    def save_division_winners(self, season_settings):
+        division_winners = Leaderboard.objects.filter(
+                    division_standing=1, season_settings_id=season_settings.pk
+                ).all()
+        for division_winner in division_winners:
+            division_winner.division_winner = True
+            division_winner.save()
+    
+    def save_standing_non_playoff(self, season_settings):
+        non_playoff_teams = Leaderboard.objects.filter(
+                    seed__gt=6, season_settings_id=season_settings.pk #TODO-make # playoff teams dynamic
+                ).all()
+        for non_playoff_team in non_playoff_teams:
+            non_playoff_team.standing = non_playoff_team.seed
+            non_playoff_team.save()
+
+    def save_standing_playoff(self, season_settings, week):
+        playoff_teams = Leaderboard.objects.filter(
+                    standing=None, season_settings_id=season_settings.pk
+                ).order_by('-seed').values_list('team_id', flat=True)
+        if len(playoff_teams) == 4:
+            previous_playoff_teams = Leaderboard.objects.filter(
+                                standing__lte=6, standing__gte=5, season_settings_id=season_settings.pk
+                            ).order_by('-seed').values_list('team_id', flat=True) #maybe change this to get all playoff teams from previous week and remove the current
+            previous_playoff_losing_teams = WeeklyMatchups.objects.filter(
+                                    team_id__in=previous_playoff_teams, 
+                                    week=week-1, 
+                                    season_settings_id=season_settings.pk, 
+                                    result="L"
+                                    ).values_list('team_id', flat=True)
+            if set(previous_playoff_teams) != set(previous_playoff_losing_teams):
+                self.save_championship_standings(season_settings, week, playoff_teams)  
+        else: 
+            playoff_losing_teams = WeeklyMatchups.objects.filter(
+                                    team_id__in=playoff_teams, 
+                                    week=week, 
+                                    season_settings_id=season_settings.pk, 
+                                    result="L"
+                                    ).values_list('team_id', flat=True)
+            place = len(playoff_teams)
+            for playoff_team in playoff_teams:
+                if playoff_team in playoff_losing_teams:
+                    playoff_losing_team = Leaderboard.objects.get(standing=None, season_settings_id=season_settings.pk, team=playoff_team)
+                    playoff_losing_team.standing = place
+                    playoff_losing_team.save()
+                    place -= 1
+    
+    def save_championship_standings(self, season_settings, week, playoff_teams):
+        championship_teams = WeeklyMatchups.objects.filter(
+                                    team_id__in=playoff_teams, 
+                                    week=week-1, 
+                                    season_settings_id=season_settings.pk, 
+                                    result="W"
+                                    ).values_list('team_id', flat=True)
+        third_place_teams = WeeklyMatchups.objects.filter(
+                            team_id__in=playoff_teams, 
+                            week=week-1, 
+                            season_settings_id=season_settings.pk, 
+                            result="L"
+                            ).values_list('team_id', flat=True)
+        results = WeeklyMatchups.objects.filter(
+                            team_id__in=playoff_teams, 
+                            week=week, 
+                            season_settings_id=season_settings.pk, 
+                            ).values_list('team_id', 'result', flat=False)
+        for team_info in results:
+            if team_info[0] in third_place_teams:
+                if team_info[1] == 'W':
+                    place = 3
+                if team_info[1] == 'L':
+                    place = 4
+            if team_info[0] in championship_teams:
+                if team_info[1] == 'W':
+                    place = 1
+                if team_info[1] == 'L':
+                    place = 2
+            playoff_team = Leaderboard.objects.get(standing=None, season_settings_id=season_settings.pk, team=team_info[0])
+            playoff_team.standing = place
+            playoff_team.save()
+
+    def compute_head_to_head(self, teams, tied_group):
+        games_played = {}
+
+        for team in tied_group:
+            total_games = 0
+            for opponent in tied_group:
+                if opponent == team:
+                    continue
+
+                record = teams[team]['head_to_head'].get(opponent)
+                if record:
+                    total_games += sum(record)
+
+            games_played[team] = total_games
+
+        if len(set(games_played.values())) != 1:
+            return [tied_group]
+        else:
+            # Compute head-to-head win count within the tied group
+            head_to_head_wins = {team: sum([teams[team]['head_to_head'].get(opponent, [0,0,0])[0] for opponent in tied_group]) for team in tied_group}
+
+            head_to_head_groups = defaultdict(list)
+            for team, wins in head_to_head_wins.items():
+                head_to_head_groups[wins].append(team)
+
+            # Sort groups by descending wins
+            sorted_groups = [
+                head_to_head_groups[wins]
+                for wins in sorted(head_to_head_groups.keys(), reverse=True)
+            ]
+            return sorted_groups
+
+    def save_division_standings(self, season_settings, standings, tiebreak):
+        division_leaders = {}
+        divisions = {}
+        # Break teams up into divisions 
+        for standing in standings.values():
+            leaderboard = Leaderboard.objects.filter(
+                team=standing['team'], season_settings_id=season_settings.pk
+            ).first()
+            
+            if leaderboard:
+                if leaderboard.division not in divisions:
+                    divisions[leaderboard.division] = {}
+                divisions[leaderboard.division][standing["team"]] = standing
+        
+        # Sort through divisions
+        for _division_name, division_teams in divisions.items():
+            division_ranking = []
+            division_win_counts = {team: sum([division_teams[team]['head_to_head'].get(division_opp, [0,0,0])[0] for division_opp in division_teams]) for team in division_teams}
+            division_ranking.extend(self.get_seeding(division_teams, tiebreak, division_win_counts))
+            for division_place, division_team in enumerate(division_ranking):
+                leaderboard = Leaderboard.objects.filter(
+                    team=division_team, season_settings_id=season_settings.pk
+                ).first()
+                leaderboard.division_standing = division_place+1
+                leaderboard.save()
+            leader = division_ranking.pop(0)
+            division_leaders[leader] = division_teams[leader]
+        return division_leaders
+
+    def get_seeding(self, teams, tiebreak, division=None):
+        final_standing = []
+        if tiebreak == "head_to_head":
+            # Step 1: Sort teams by total wins (descending order)
+            sorted_teams = sorted(teams.keys(), key=lambda team: teams[team]['wins'], reverse=True)
+
+            # Step 2: Identify groups of teams tied with same amount of win
+            win_groups = defaultdict(list)
+            for team in sorted_teams:
+                win_groups[teams[team]['wins']].append(team)
+            
+            print(win_groups)
+            # Step 3: Check if there is a tie between teams with the same numer of wins
+            for _win_count, group in sorted(win_groups.items(), reverse=True):
+                print(group)
+                sorted_group = []
+                if len(group) > 1:  # Only apply tie-breakers if multiple teams have the same wins
+                    # Compute head-to-head win count within the tied group
+                    sorted_head_to_head = self.compute_head_to_head(teams, group)
+                    print(sorted_head_to_head)
+                    # Step 3B: Check if there's still a tie after head-to-head wins
+                    for head_to_head_rank in sorted_head_to_head:
+                        print(head_to_head_rank)
+                        if len(head_to_head_rank) == 1:
+                            sorted_group.extend(head_to_head_rank)
+                        else:
+                            head_to_head_group = {tied_team: teams[tied_team] for tied_team in head_to_head_rank}
+                            if division:
+                                division_wins = {team: division[team] for team in division if team in head_to_head_group}
+                                # Use division wins as tie-breaker
+                                sorted_sub_group = sorted(head_to_head_group, key=lambda team: division_wins[team], reverse=True)
+                                # Step 3C: Check if there's still a tie after division wins
+                                division_win_counts_values = list(division_wins.values())
+                                if len(set(division_win_counts_values)) == 1:
+                                    sorted_group.extend(self.get_seeding({tied_team: teams[tied_team] for tied_team in sorted_sub_group}, "pf"))
+                                else:
+                                    sorted_group.extend(sorted_sub_group)
+                            else:
+                                sorted_group.extend(self.get_seeding(head_to_head_group, "pf"))
+                else:
+                    sorted_group = group 
+                final_standing.extend(sorted_group)
+        else:
+            final_standing.extend(sorted(teams.keys(), key=lambda team: (teams[team]['wins'], teams[team]["pf"]), reverse=True))
+        return final_standing
+
+    def save_regular_season_standings(self, season_settings):
         # Get Season Stats
-        standings = WeeklyMatchups.objects.filter(season_settings=season_settings.pk).values('team').annotate(
+        standings = WeeklyMatchups.objects.filter(season_settings=season_settings.pk, playoff=False).values('team').annotate(
             pf=Sum('score'),
             #total_opp_score=Sum('opp__score'),  # Assuming 'opp' has a score field too
             wins=Count(Case(When(result='W', then=1), output_field=IntegerField())),
             ties=Count(Case(When(result='T', then=1), output_field=IntegerField())),
             losses=Count(Case(When(result='L', then=1), output_field=IntegerField()))
             )
-        
-        # Set up head to head record
-        for standing in standings:
-            head_to_head = {}
-            games = WeeklyMatchups.objects.filter(season_settings=season_settings.pk, team=standing["team"])
-            for game in games:
-                if game.opp not in head_to_head:
-                    head_to_head[game.opp.pk] = 0
-                if game.result == 'W':
-                    head_to_head[game.opp.pk] += 1
-            standing["head_to_head"] = head_to_head
-        
-        # Find Out division Seeding First
+        final_seeding = []
         num_divisions = int(season_settings.league_settings["divisions"])
-        if num_divisions and num_divisions > 1:
-            # Break Up divisions 
-            division_winners = []
-            remaining_teams = []
-            divisions = {}
-            for standing in standings:
-                #print(standing)
-                leaderboard = Leaderboard.objects.filter(
-                    team=standing['team'], season_settings_id=season_settings.pk
-                ).first()
-                
-                # Add the leaderboard division info if the leaderboard object exists
-                if leaderboard:
-                    if leaderboard.division not in divisions:
-                        divisions[leaderboard.division] = {}
-                    divisions[leaderboard.division][standing["team"]] = standing
+        if int(season_settings.season) < 2024:
+            division_tiebreak = "head_to_head"
+            seeding_tiebreak = "head_to_head"
+            wildcard_tiebreak = "head_to_head"
+        if int(season_settings.season) == 2024:
+            division_tiebreak = "head_to_head"
+            seeding_tiebreak = "head_to_head"
+            wildcard_tiebreak = "pf"
+        else:
+            division_tiebreak = "head_to_head"
+            seeding_tiebreak = "pf"
+            wildcard_tiebreak = "pf"
+
             
-            for division_name, teams in divisions.items():
-                # Step 1: Sort teams by total wins (descending order)
-                sorted_teams = sorted(teams.keys(), key=lambda team: teams[team]['wins'], reverse=True)
+        
+        if any([division_tiebreak, seeding_tiebreak, wildcard_tiebreak])=="head_to_head" or num_divisions > 1:
+            # Set up head to head record
+            for standing in standings:
+                head_to_head = {}
+                games = WeeklyMatchups.objects.filter(season_settings=season_settings.pk, team=standing["team"])
+                for game in games:
+                    if game.opp.pk not in head_to_head:
+                        head_to_head[game.opp.pk] = [0,0,0]
+                    if game.result == 'W':
+                        head_to_head[game.opp.pk][0] += 1
+                    if game.result == 'L':
+                        head_to_head[game.opp.pk][1] += 1
+                    if game.result == 'T':
+                        head_to_head[game.opp.pk][2] += 1
+                standing["head_to_head"] = head_to_head
 
-                # Step 2: Identify groups of tied teams
-                tied_groups = defaultdict(list)
-                for team in sorted_teams:
-                    tied_groups[teams[team]['wins']].append(team)
+        standings = {team_info["team"]: team_info for team_info in standings}
+        if num_divisions and num_divisions > 1:
+            # Find Out division Seeding First
+            division_leaders = self.save_division_standings(season_settings, standings, division_tiebreak)
+            final_seeding.extend(self.get_seeding(division_leaders, seeding_tiebreak))
+            print(final_seeding)
+            standings = {team: standings[team] for team in standings if team not in division_leaders.keys()}
 
-                # Step 3: Apply head-to-head tie-breaker within each tied group
-                division_ranking = []
-
-                for win_count, group in sorted(tied_groups.items(), reverse=True):
-                    if len(group) > 1:  # Only apply tie-breakers if multiple teams have the same wins
-                        # Compute head-to-head win count within the tied group
-                        win_counts = {team: sum(teams[team]['head_to_head'].get(opponent, 0) for opponent in group) for team in group}
-                        
-                        # Step 3A: Sort by head-to-head wins
-                        sorted_group = sorted(group, key=lambda team: win_counts[team], reverse=True)
-
-                        # Step 3B: Check if there's still a tie after head-to-head wins
-                        head_to_head_values = list(win_counts.values())
-                        if len(set(head_to_head_values)) == 1:  # All have the same head-to-head wins
-                            # Step 4: Use point differential as tie-breaker
-                            sorted_group = sorted(group, key=lambda team: teams[team]['pf'], reverse=True)
-
-                        division_ranking.extend(sorted_group)
-                    else:
-                        division_ranking.extend(group)
-
-                # Step 5: Print the division ranking
-                #print("Division ranking:", division_ranking)
-                for division_place, division_team in enumerate(division_ranking):
-                    leaderboard = Leaderboard.objects.filter(
-                        team=division_team, season_settings_id=season_settings.pk
-                    ).first()
-                    leaderboard.division_standing = division_place+1
-                    leaderboard.save()
-                winner = division_ranking.pop(0)
-                division_winners.append(teams[winner])
-                teams.pop(winner)
-
-                #print(teams)
-
-                #TODO- FIX REMAINING TEAMS
-                for team, team_data in teams.items():
-                    remaining_teams.append(team_data)
-            standings = remaining_teams
-
-        # Sort Remaining Teams
-        #print(standings)
-        #print(division_winners)
-        sorted_standings = sorted(standings, key=lambda standing: (standing['wins'], standing['pf']), reverse=True)
-        if division_winners:
-            sorted_division_winners = sorted(division_winners, key=lambda standing: (standing['wins'], standing['pf']), reverse=True)
-            sorted_division_winners.extend(sorted_standings)
-            sorted_standings = sorted_division_winners
-        for place, team_data in enumerate(sorted_standings):
+        final_seeding.extend(self.get_seeding(standings, wildcard_tiebreak))
+        for place, team in enumerate(final_seeding):
             leaderboard = Leaderboard.objects.filter(
-                    team=team_data["team"], season_settings_id=season_settings.pk
+                    team=team, season_settings_id=season_settings.pk
                 ).first()
             leaderboard.seed = place+1
+            if num_divisions < 2:
+                leaderboard.division_standing = place+1
             leaderboard.save()
