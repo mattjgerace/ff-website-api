@@ -454,18 +454,14 @@ class BaseClient(ABC):
             for team in sorted_teams:
                 win_groups[teams[team]['wins']].append(team)
             
-            print(win_groups)
             # Step 3: Check if there is a tie between teams with the same numer of wins
             for _win_count, group in sorted(win_groups.items(), reverse=True):
-                print(group)
                 sorted_group = []
                 if len(group) > 1:  # Only apply tie-breakers if multiple teams have the same wins
                     # Compute head-to-head win count within the tied group
                     sorted_head_to_head = self.compute_head_to_head(teams, group)
-                    print(sorted_head_to_head)
                     # Step 3B: Check if there's still a tie after head-to-head wins
                     for head_to_head_rank in sorted_head_to_head:
-                        print(head_to_head_rank)
                         if len(head_to_head_rank) == 1:
                             sorted_group.extend(head_to_head_rank)
                         else:
@@ -536,7 +532,6 @@ class BaseClient(ABC):
             # Find Out division Seeding First
             division_leaders = self.save_division_standings(season_settings, standings, division_tiebreak)
             final_seeding.extend(self.get_seeding(division_leaders, seeding_tiebreak))
-            print(final_seeding)
             standings = {team: standings[team] for team in standings if team not in division_leaders.keys()}
 
         final_seeding.extend(self.get_seeding(standings, wildcard_tiebreak))

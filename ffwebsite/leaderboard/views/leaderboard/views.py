@@ -30,7 +30,6 @@ class LeaderboardViewSet(ModelViewSet):
         if season is not None:
             queryset = queryset.filter(season_settings__season=season)
         if playoff is not None:
-            print("HELLO")
             queryset = queryset.filter(seed__lte=6)
 
         queryset = queryset.select_related('team', 'season_settings').prefetch_related(Prefetch('team__weeklymatchups_set', to_attr='weeklymatchups_list'))
