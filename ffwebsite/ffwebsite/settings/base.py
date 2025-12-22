@@ -21,8 +21,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-CORS_ALLOWED_ORIGINS = ()
-
 CORS_ALLOW_METHODS = (
     #"DELETE",
     "GET",
@@ -43,8 +41,6 @@ CORS_ALLOW_HEADERS = (
     "access-control-allow-origin",
     "access-control-allow-credentials"
 )
-
-CORS_ORIGIN_ALLOW_ALL = True
 
 # Application definition
 
