@@ -25,10 +25,10 @@ from leaderboard.views.weekly_matchups import views as weeklymatchups_views
 from leaderboard.views.season_settings import views as seasonsettings_views
 
 router = routers.DefaultRouter()
-router.register(r'leaderboard', leaderboard_views.LeaderboardViewSet, basename='Leaderboard')
-router.register(r'season', seasonsettings_views.SeasonSettingsViewSet)
-router.register(r'draft', draft_views.DraftViewSet)
-router.register(r'matchups', weeklymatchups_views.WeeklyMatchupsViewSet, basename='matchups')
+router.register(r'api/leaderboard', leaderboard_views.LeaderboardViewSet, basename='Leaderboard')
+router.register(r'api/season', seasonsettings_views.SeasonSettingsViewSet)
+router.register(r'api/draft', draft_views.DraftViewSet)
+router.register(r'api/matchups', weeklymatchups_views.WeeklyMatchupsViewSet, basename='matchups')
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
