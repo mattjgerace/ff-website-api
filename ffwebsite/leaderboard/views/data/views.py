@@ -207,3 +207,53 @@ class PopulatePlayerCollection(APIView):
 
         result = f"Player data updated successfully."
         return Response({"message": result}, status=status.HTTP_201_CREATED)
+    
+
+class DeleteMatchupsView(APIView):
+    permission_classes = [HasAPIToken]
+
+    def post(self, request, *args, **kwargs):
+        season = request.data.get("season")
+        week = int(request.data.get("week"))
+        if not season or not week:
+            return Response(
+                {"error": "Include 'season' and 'week' in request body"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        else:
+            if int(season) > 2025:
+                return Response(
+                                {"error": f"Ensure week <= 2025"},
+                                status=status.HTTP_400_BAD_REQUEST,
+                                )
+            season_settings = SeasonSettings.objects.get(season=season)
+            if not Leaderboard.objects.filter(season_settings=season_settings).exists():
+                return Response(
+                {"error": f"Teams are not populated for the {season} season"},
+                status=status.HTTP_400_BAD_REQUEST,
+                )
+            if week > 17 or week < 1: # > value should be dynamic from db (playoff_start_week+3?)
+                return Response(
+                                {"error": f"Ensure week <= 17"},
+                                status=status.HTTP_400_BAD_REQUEST,
+                                )
+            else:
+                if WeeklyMatchups.objects.filter(season_settings=season_settings, week=week).exists():
+                    for matchup in WeeklyMatchups.objects.filter(season_settings=season_settings, week=week).all():
+                        team = Leaderboard.objects.filter(season_settings=season_settings, team=matchup.team).first()
+                        if week < season_settings.playoff_week_start:
+                            team.standing = None
+                            team.division_winner = False
+                            team.season_winner = False
+                        else:
+                            team.standing = None
+                        team.save()
+                        matchup.delete()
+                    result = f"Matchups for week {week} of the {season} season are deleted!"
+                else:
+                    return Response(
+                                {"error": f"Ensure there is matchup data for the current week in this season"},
+                                status=status.HTTP_400_BAD_REQUEST,
+                                )
+
+            return Response({"message": result}, status=status.HTTP_201_CREATED)
