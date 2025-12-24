@@ -27,7 +27,7 @@ DATABASES["default"]["OPTIONS"] = {
     "connect_timeout": 10
 }
 
-ALLOWED_HOSTS = ['ff-website-api.up.railway.app', 'ff-website-api-dev.up.railway.app']
+ALLOWED_HOSTS = ['ff-website-api.up.railway.app', 'ff-website-api-dev.up.railway.app', 'ff-website-proxy.railway.internal']
 CSRF_TRUSTED_ORIGINS = ['https://ff-website-api.up.railway.app', 'https://ff-website-api-dev.up.railway.app'] 
 CORS_ALLOWED_ORIGINS = ('https://ff-website-proxy.up.railway.app', 'https://ff-website-proxy-dev.up.railway.app', 'http://ff-website-proxy.railway.internal:3000')
 
