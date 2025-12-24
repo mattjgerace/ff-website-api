@@ -29,7 +29,7 @@ DATABASES["default"]["OPTIONS"] = {
 
 ALLOWED_HOSTS = ['ff-website-api.up.railway.app', 'ff-website-api-dev.up.railway.app']
 CSRF_TRUSTED_ORIGINS = ['https://ff-website-api.up.railway.app', 'https://ff-website-api-dev.up.railway.app'] 
-CORS_ALLOWED_ORIGINS = ('https://ff-website-proxy.up.railway.app', 'https://ff-website-proxy-dev.up.railway.app')
+CORS_ALLOWED_ORIGINS = ('https://ff-website-proxy.up.railway.app', 'https://ff-website-proxy-dev.up.railway.app', 'http://ff-website-proxy.railway.internal:3000')
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
