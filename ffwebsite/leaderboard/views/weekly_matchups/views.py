@@ -17,7 +17,6 @@ from django_filters import rest_framework as filters
 
 
 class WeeklyMatchupsFilter(filters.FilterSet):
-    permission_classes = [HasAPIToken]
     season = filters.NumberFilter(field_name="season_settings__season", lookup_expr='exact')
     lower_week = filters.NumberFilter(field_name="week", lookup_expr='gte')
     higher_week = filters.NumberFilter(field_name="week", lookup_expr='lte')
@@ -27,6 +26,7 @@ class WeeklyMatchupsFilter(filters.FilterSet):
         fields = ['week', 'playoff']
 
 class WeeklyMatchupsViewSet(ModelViewSet):
+    permission_classes = [HasAPIToken]
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = WeeklyMatchupsFilter
     serializer_class = WeeklyMatchupsSerializer

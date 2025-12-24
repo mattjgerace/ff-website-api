@@ -4,8 +4,8 @@ from django.db.models import JSONField, ForeignKey, CASCADE, OneToOneField, Many
 from django.contrib.postgres.fields import ArrayField
 
 class TeamManagerAPP(Model):
-    first_name = CharField(max_length=30)
-    last_name = CharField(max_length=30)
+    first_name = CharField()
+    last_name = CharField()
     active = BooleanField()
 
     @property
@@ -22,9 +22,9 @@ class TeamManagerSLEEPER(Model):
     user_id = CharField()
 
 class Player(Model):
-    first_name = CharField(max_length=30)
-    last_name = CharField(max_length=30)
-    position = CharField(max_length=5)
+    first_name = CharField()
+    last_name = CharField()
+    position = CharField()
 
 class PlayerSLEEPER(Model):
     player = ForeignKey(Player, on_delete=CASCADE)
@@ -99,10 +99,21 @@ class WeeklyMatchups(Model):
     
     #matchup = IntegerField() # ID representing the matchup
     #roster = ArrayField(CharField()) # Player id's #don't don't need
-    #starters = ArrayField(CharField()) # Player id's#probably don't need
+    #starters = ArrayField(CharField()) # Player id's #probably don't need
+
+class ExhibitionWeeklyMatchups(Model):
+    season_settings = ForeignKey(SeasonSettings, on_delete=CASCADE)
+    week = IntegerField()
+    team = ForeignKey(TeamManagerAPP, on_delete=CASCADE)
+    opp = ForeignKey(TeamManagerAPP, null=True, on_delete=CASCADE, related_name='exhibition_opponent') #opp team id--this could be repetitive ...
+    score = DecimalField(max_digits=5, decimal_places=2, null=True)
+    result = CharField()
+    weekly_winner = BooleanField(default=False)
+    playoff = BooleanField(default=False)
 
 class PlayerPoints(Model):
     weeklymatchup = ForeignKey(WeeklyMatchups, null=True, on_delete=CASCADE)
+    exhibtion = ForeignKey(ExhibitionWeeklyMatchups, default=None, null=True, on_delete=CASCADE)
     player = ForeignKey(Player, on_delete=CASCADE)
     points = DecimalField(max_digits=5, decimal_places=2)
     starter = BooleanField()

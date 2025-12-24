@@ -1,6 +1,6 @@
 import json
 import os
-from sleeper.api import LeagueAPIClient, DraftAPIClient
+from sleeper.api import LeagueAPIClient, DraftAPIClient, PlayerAPIClient
 from sleeper.enum import Sport
 
 from leaderboard.models import PlayerSLEEPER, SeasonSettingsSLEEPER, TeamManagerSLEEPER
@@ -41,6 +41,10 @@ class SleeperClient(BaseClient):
     
     def get_matchups_api(self, season, week):
         return LeagueAPIClient.get_matchups_for_week(league_id=self.league_id, week=week)
+    
+    def get_players_api(self):
+        #return PlayerAPIClient.get_all_players(sport=Sport.NFL)
+        return None
 
     def get_season_settings(self):
         league_info = self.get_league_api()

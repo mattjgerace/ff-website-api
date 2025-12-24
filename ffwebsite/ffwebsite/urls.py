@@ -18,17 +18,17 @@ from django.contrib import admin
 from django.urls import path
 from django.urls import include, path
 from rest_framework import routers
-from leaderboard.views.data.views import PopulateNewSeasonView, PopulateNewTeamsView, PopulateNewDraftView, PopulateNewMatchupsView
-#from leaderboard.views.leaderboard import views as leaderboard_views
-#from leaderboard.views.draft import views as draft_views
-#from leaderboard.views.weekly_matchups import views as weeklymatchups_views
-#from leaderboard.views.season_settings import views as seasonsettings_views
+from leaderboard.views.data.views import PopulateNewSeasonView, PopulateNewTeamsView, PopulateNewDraftView, PopulateNewMatchupsView, DeleteMatchupsView, PopulatePlayerCollection
+from leaderboard.views.leaderboard import views as leaderboard_views
+from leaderboard.views.draft import views as draft_views
+from leaderboard.views.weekly_matchups import views as weeklymatchups_views
+from leaderboard.views.season_settings import views as seasonsettings_views
 
 router = routers.DefaultRouter()
-#router.register(r'leaderboard', leaderboard_views.LeaderboardViewSet, basename='Leaderboard')
-#router.register(r'season', seasonsettings_views.SeasonSettingsViewSet)
-#router.register(r'draft', draft_views.DraftViewSet)
-#router.register(r'matchups', weeklymatchups_views.WeeklyMatchupsViewSet, basename='matchups')
+router.register(r'api/leaderboard', leaderboard_views.LeaderboardViewSet, basename='Leaderboard')
+router.register(r'api/season', seasonsettings_views.SeasonSettingsViewSet)
+router.register(r'api/draft', draft_views.DraftViewSet)
+router.register(r'api/matchups', weeklymatchups_views.WeeklyMatchupsViewSet, basename='matchups')
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
@@ -38,6 +38,8 @@ urlpatterns = [
     path("api/data/populate-teams/", PopulateNewTeamsView.as_view(), name="populate_teams"),
     path("api/data/populate-draft/", PopulateNewDraftView.as_view(), name="populate_draft"),
     path("api/data/populate-matchups/", PopulateNewMatchupsView.as_view(), name="populate_matchups"),
+    #path("api/data/delete-matchups/", DeleteMatchupsView.as_view(), name="populate_player_collection"),
+    path("api/data/populate-player-collection/", PopulatePlayerCollection.as_view(), name="populate_player_collection"),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]
 
