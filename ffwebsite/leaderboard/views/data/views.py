@@ -13,17 +13,17 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-def to_json_safe(value):
-    if hasattr(value, '__dict__'):
-        return to_json_safe(value.__dict__)
+def to_mongo_safe(value):
     if isinstance(value, Enum):
         return value.value
     if isinstance(value, (datetime, date)):
         return value.isoformat()
     if isinstance(value, list):
-        return [to_json_safe(v) for v in value]
+        return [to_mongo_safe(v) for v in value]
     if isinstance(value, dict):
-        return {k: to_json_safe(v) for k, v in value.items()}
+        return {k: to_mongo_safe(v) for k, v in value.items()}
+    if hasattr(value, '__dict__'):
+        return to_mongo_safe(value.__dict__)
     return value
 
 def get_client(platform, season, mongodb=None):
@@ -193,7 +193,7 @@ class PopulatePlayerCollection(APIView):
         operations = []
 
         for p in players.keys():
-            player_data = to_json_safe(players[p])
+            player_data = to_mongo_safe(players[p])
             
             doc = {
                 "_id": str(player_data["player_id"]),
