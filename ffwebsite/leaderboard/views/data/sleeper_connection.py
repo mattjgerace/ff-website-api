@@ -43,8 +43,8 @@ class SleeperClient(BaseClient):
         return LeagueAPIClient.get_matchups_for_week(league_id=self.league_id, week=week)
     
     def get_players_api(self):
-        #return PlayerAPIClient.get_all_players(sport=Sport.NFL)
-        return None
+        return PlayerAPIClient.get_all_players(sport=Sport.NFL)
+        #return None
 
     def get_season_settings(self):
         league_info = self.get_league_api()
