@@ -21,6 +21,9 @@ class SleeperClient(BaseClient):
         draft_id = season_settings.platform_season_settings.draft_id
         if draft_id:
             self.draft_id = draft_id
+    
+    def get_league_id(self):
+        return self.get_id_api()
 
     def get_id_api(self):
         league_data = {league.name: league.league_id for league in LeagueAPIClient.get_user_leagues_for_year(user_id=os.environ['SLEEPER_USER_ID'], sport=self.sport, year=self.season)
@@ -80,8 +83,12 @@ class SleeperClient(BaseClient):
     def get_managers(self):
         roster_info = self.get_rosters_api()
         roster_results = [roster.__dict__ for roster in roster_info]
+        user_key = json.loads(os.environ.get("SLEEPER_USER_KEY", "{}"))
         for roster in roster_results:
+            name = user_key[str(roster["roster_id"])].split()
             roster["settings"] = roster["settings"].__dict__
+            roster["first_name"] = name[0]
+            roster["last_name"] = f"{name[1]} {name[2]}" if len(name) > 2 else name[1]
         return roster_results
     
     def get_draft(self):

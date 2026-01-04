@@ -27,7 +27,7 @@ class BaseClient(ABC):
         if league_id:
             self.league_id = league_id
         else:
-            self.league_id = self.get_id_api()
+            self.league_id = self.get_league_id()
 
     @abstractmethod
     def _set_platform(self):
@@ -84,26 +84,29 @@ class BaseClient(ABC):
         platform_teams = []
         for i, roster in enumerate(roster_info):
             if not self.manager_model.objects.filter(team_id = roster["roster_id"]).exists():
-                user_key = json.loads(os.environ.get("SLEEPER_USER_KEY", "{}"))
-                name = user_key[str(roster["roster_id"])].split()
-                first_name = name[0]
-                last_name = f"{name[1]} {name[2]}" if len(name) > 2 else name[1]
-                if not TeamManagerAPP.objects.filter(first_name=first_name, last_name=last_name).exists():
+                if not TeamManagerAPP.objects.filter(first_name=roster["first_name"], last_name=roster["last_name"]).exists():
                     team_manager = TeamManagerAPP(
-                            first_name = first_name,
-                            last_name = last_name,
+                            first_name = roster["first_name"],
+                            last_name = roster["last_name"],
                             active = True,
                         )
                     team_manager.save()
                 else:
-                    team_manager = TeamManagerAPP.objects.get(first_name=first_name, last_name=last_name)
-                platform_teams.append(
-                    self.manager_model(
+                    team_manager = TeamManagerAPP.objects.get(first_name=roster["first_name"], last_name=roster["last_name"])
+                
+                if roster["owner_id"]:
+                    platform_model = self.manager_model(
                         team_manager=team_manager,
                         team_id=roster["roster_id"],
                         user_id=roster["owner_id"] #might be able to get rid of
                     )
-                )
+                else:
+                    platform_model = self.manager_model(
+                        team_manager=team_manager,
+                        team_id=roster["roster_id"],
+                        user_id=roster["owner_id"] #might be able to get rid of
+                    )
+                platform_teams.append(platform_model)
             else:
                 team_manager = self.get_team_manager(roster["roster_id"])
             leaderboards.append(Leaderboard(
