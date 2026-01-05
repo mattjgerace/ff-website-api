@@ -169,8 +169,10 @@ class BaseClient(ABC):
         return draft
     
     def save_draft_order(self, draft_info, season_settings):
-        for leaderboard in Leaderboard.objects.filter(season_settings=season_settings):
-            leaderboard.draft_pick = draft_info["order"][leaderboard.team.teammanagersleeper_set.first().user_id]
+        for key, value in draft_info["order"]:
+            team_manager =self.get_team_manager(key)
+            leaderboard = Leaderboard.objects.filter(season_settings=season_settings, team_manager=team_manager)
+            leaderboard.draft_pick = value
             leaderboard.save()
 
     def save_draft_selections(self, draft, draft_selections):

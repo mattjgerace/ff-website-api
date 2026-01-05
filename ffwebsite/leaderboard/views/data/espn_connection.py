@@ -56,6 +56,28 @@ class EspnClient(BaseClient):
             team_info["roster_id"] = team.team_id
             roster_results.append(team_info)
         return roster_results
+    
+    def get_draft(self):
+        LEAGUE = self.get_league_api()
+        draft_results = {
+            "date": None,
+            "draft_type": None,
+            "draft_settings": None,
+            "order": {},
+        }
+        for pick, selection in enumerate(LEAGUE.draft):
+            if selection.round_num == 1:
+                draft_results["order"][selection.team.team_id] = selection.round_pick      
+        return draft_results
+    
+    def get_draft_selections(self):
+        LEAGUE = self.get_league_api()
+        draft_selection_results = []
+        for pick, selection in enumerate(LEAGUE.draft):
+            draft_selection = selection.__dict__
+            draft_selection["pick_no"] = pick+1
+            draft_selection["round_no"] = selection["round_num"]
+        return draft_selection_results
 
     def set_season_settings(self):
        #LEAGUE = League(league_id=os.environ['ESPN_ID'], year=self.season, espn_s2=os.environ['ESPN_S2'], swid=os.environ['ESPN_SWID'])
