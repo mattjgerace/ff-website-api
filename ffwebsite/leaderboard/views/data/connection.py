@@ -135,7 +135,6 @@ class BaseClient(ABC):
             return self.player_model.objects.get(external_player_id=player_id).player
         else:
             player_details = self.mongodb["players"].find_one({self.mongo_id: player_id})
-            print(player_details)
             first_name = player_details["first_name"]
             last_name = player_details["last_name"]
             position = player_details["position"]
