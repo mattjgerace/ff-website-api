@@ -94,7 +94,7 @@ class BaseClient(ABC):
                 else:
                     team_manager = TeamManagerAPP.objects.get(first_name=roster["first_name"], last_name=roster["last_name"])
                 
-                if roster["owner_id"]:
+                if "owner_id" in roster.keys():
                     platform_model = self.manager_model(
                         team_manager=team_manager,
                         team_id=roster["roster_id"],
@@ -104,7 +104,6 @@ class BaseClient(ABC):
                     platform_model = self.manager_model(
                         team_manager=team_manager,
                         team_id=roster["roster_id"],
-                        user_id=roster["owner_id"] #might be able to get rid of
                     )
                 platform_teams.append(platform_model)
             else:
@@ -115,7 +114,7 @@ class BaseClient(ABC):
                 #wins = 0,
                 #losses = 0,
                 #ties = 0,
-                division = season_settings.division_mapping.get(str(roster["settings"]["division"]), "N/A"),
+                division = season_settings.division_mapping.get(str(roster["settings"]["division"]), "N/A") if "settings" in roster.keys() else "N/A",
                 seed = i+1, #need to fix
                 division_standing = 1,
             )
@@ -135,7 +134,8 @@ class BaseClient(ABC):
         if self.player_model.objects.filter(external_player_id=player_id).exists():
             return self.player_model.objects.get(external_player_id=player_id).player
         else:
-            player_details = self.mongodb["players"].find_one({"_id": str(player_id)})
+            player_details = self.mongodb["players"].find_one({self.mongo_id: player_id})
+            print(player_details)
             first_name = player_details["first_name"]
             last_name = player_details["last_name"]
             position = player_details["position"]
@@ -169,9 +169,9 @@ class BaseClient(ABC):
         return draft
     
     def save_draft_order(self, draft_info, season_settings):
-        for key, value in draft_info["order"]:
+        for key, value in draft_info["order"].items():
             team_manager =self.get_team_manager(key)
-            leaderboard = Leaderboard.objects.filter(season_settings=season_settings, team_manager=team_manager)
+            leaderboard = Leaderboard.objects.get(season_settings=season_settings, team=team_manager)
             leaderboard.draft_pick = value
             leaderboard.save()
 

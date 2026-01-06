@@ -10,6 +10,7 @@ class SleeperClient(BaseClient):
 
     def _set_platform(self):
         self.platform = "sleeper"
+        self.mongo_id = "_id"
         self.sport = Sport.NFL
 
     def _set_models(self):

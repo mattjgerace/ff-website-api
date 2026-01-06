@@ -186,6 +186,7 @@ class PopulatePlayerCollection(APIView):
                             )
         mongodb.drop_collection("players")
         players_collection = mongodb["players"]
+        players_collection.create_index("espn_id", unique=True, sparse=True)
 
         client = get_client("sleeper", "2023")
         players = client.get_players_api()

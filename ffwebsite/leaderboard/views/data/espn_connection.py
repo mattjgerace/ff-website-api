@@ -9,17 +9,30 @@ from espn_api.football import League
 class EspnClient(BaseClient):
     def _set_platform(self):
         self.platform = "espn"
+        self.mongo_id = "espn_id"
     
     def _set_models(self):
         self.manager_model = TeamManagerESPN
         self.season_settings_model = SeasonSettingsESPN
         self.player_model = PlayerESPN
+
+    def _set_draft_id(self, draft_id=None):
+        pass
+
+    def get_draft_api(self):
+        pass 
+    
+    def get_draft_selections_api(self):
+        pass
+    
+    def get_id_api(self):
+        pass
     
     def get_league_id(self):
         return os.environ['ESPN_ID']
 
     def get_league_api(self):
-        return League(league_id=os.environ['ESPN_ID'], year=self.season, espn_s2=os.environ['ESPN_S2'], swid=os.environ['ESPN_SWID'])
+        return League(league_id=os.environ['ESPN_ID'], year=int(self.season), espn_s2=os.environ['ESPN_S2'], swid=os.environ['ESPN_SWID'])
     
     def get_season_settings(self):
         LEAGUE = self.get_league_api()
@@ -31,7 +44,8 @@ class EspnClient(BaseClient):
                 "league_settings": league_settings, #TODO --might need to fix
                 "roster_settings": [player.slot_position if player.slot_position!='RB/WR/TE' else 'FLEX' for player in week_1_boxscore.home_lineup],
                 "scoring_settings": LEAGUE.settings.scoring_format,
-                "playoff_week_start": LEAGUE.settings.reg_season_count+1
+                "playoff_week_start": LEAGUE.settings.reg_season_count+1,
+                "division_mapping": {},
         }
         platform_results = {
                 "league_id": self.league_id,
@@ -76,7 +90,11 @@ class EspnClient(BaseClient):
         for pick, selection in enumerate(LEAGUE.draft):
             draft_selection = selection.__dict__
             draft_selection["pick_no"] = pick+1
-            draft_selection["round_no"] = selection["round_num"]
+            draft_selection["round"] = selection.round_num
+            draft_selection["roster_id"] = selection.team.team_id
+            draft_selection["player_id"] = int(selection.playerId)
+            draft_selection["position"] = LEAGUE.player_info(playerId=draft_selection["player_id"]).position
+            draft_selection_results.append(draft_selection)
         return draft_selection_results
 
     def set_season_settings(self):
