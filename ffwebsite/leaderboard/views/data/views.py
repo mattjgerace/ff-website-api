@@ -186,7 +186,10 @@ class PopulatePlayerCollection(APIView):
                             )
         mongodb.drop_collection("players")
         players_collection = mongodb["players"]
-        players_collection.create_index("espn_id", unique=True, sparse=True)
+        players_collection.create_index("espn_id", 
+                                        unique=True, 
+                                        partialFilterExpression={"espn_id": {"$exists": True}}
+                                        )
 
         client = get_client("sleeper", "2023")
         players = client.get_players_api()
@@ -195,6 +198,9 @@ class PopulatePlayerCollection(APIView):
 
         for p in players.keys():
             player_data = to_mongo_safe(players[p])
+
+            if player_data.get("espn_id") is None:
+                player_data.pop("espn_id", None)
             
             doc = {
                 "_id": str(player_data["player_id"]),
