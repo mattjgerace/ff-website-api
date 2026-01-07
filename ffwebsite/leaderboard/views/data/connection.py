@@ -82,18 +82,21 @@ class BaseClient(ABC):
     def save_managers(self, roster_info, season_settings):
         leaderboards = []
         platform_teams = []
+        active_managers = []
         for i, roster in enumerate(roster_info):
-            if not self.manager_model.objects.filter(team_id = roster["roster_id"]).exists():
+            if self.manager_model.objects.filter(team_id = roster["roster_id"]).exists():
+                team_manager = self.get_team_manager(roster["roster_id"])
+            else:
                 if not TeamManagerAPP.objects.filter(first_name=roster["first_name"], last_name=roster["last_name"]).exists():
                     team_manager = TeamManagerAPP(
-                            first_name = roster["first_name"],
-                            last_name = roster["last_name"],
-                            active = True,
-                        )
+                                first_name = roster["first_name"],
+                                last_name = roster["last_name"],
+                                active = True,
+                            )
                     team_manager.save()
                 else:
                     team_manager = TeamManagerAPP.objects.get(first_name=roster["first_name"], last_name=roster["last_name"])
-                
+                    
                 if "owner_id" in roster.keys():
                     platform_model = self.manager_model(
                         team_manager=team_manager,
@@ -106,8 +109,10 @@ class BaseClient(ABC):
                         team_id=roster["roster_id"],
                     )
                 platform_teams.append(platform_model)
-            else:
-                team_manager = self.get_team_manager(roster["roster_id"])
+            team_manager.active = True
+            team_manager.save()
+            active_managers.append(team_manager.pk)
+                
             leaderboards.append(Leaderboard(
                 season_settings=season_settings,
                 team=team_manager,
@@ -120,8 +125,9 @@ class BaseClient(ABC):
             )
             )
         if len(platform_teams) > 0:
-            self.manager_model.objects.bulk_create(platform_teams)
+            self.manager_model.objects.bulk_create(platform_teams) 
         Leaderboard.objects.bulk_create(leaderboards)
+        TeamManagerAPP.objects.exclude(pk__in=active_managers).update(active=False)
 
     def process_draft(self, season_settings):
         self._set_draft_id(season_settings)

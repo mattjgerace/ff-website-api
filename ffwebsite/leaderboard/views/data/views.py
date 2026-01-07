@@ -75,8 +75,8 @@ class PopulateNewTeamsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         else:
-            season_settings = SeasonSettings.objects.get(season=season)
-            if season_settings:
+            if SeasonSettings.objects.filter(season=season).exists():
+                season_settings = SeasonSettings.objects.get(season=season)
                 if Leaderboard.objects.filter(season_settings=season_settings).exists():
                     return Response(
                     {"error": f"Teams are already populated for the {season} season"},

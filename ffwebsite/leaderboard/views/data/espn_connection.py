@@ -96,7 +96,3 @@ class EspnClient(BaseClient):
             draft_selection["position"] = LEAGUE.player_info(playerId=draft_selection["player_id"]).position
             draft_selection_results.append(draft_selection)
         return draft_selection_results
-
-    def set_season_settings(self):
-       #LEAGUE = League(league_id=os.environ['ESPN_ID'], year=self.season, espn_s2=os.environ['ESPN_S2'], swid=os.environ['ESPN_SWID'])
-       return
