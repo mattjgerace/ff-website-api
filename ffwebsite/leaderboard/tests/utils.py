@@ -29,6 +29,8 @@ def create_mock_rosters_return():
         roster_results.append({
             "roster_id": i,
             "owner_id": i,
+            "first_name": "test",
+            "last_name": "test",
             "settings": {"division": i%2}
         })
     return roster_results
