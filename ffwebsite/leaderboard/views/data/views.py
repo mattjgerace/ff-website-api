@@ -26,6 +26,12 @@ def to_mongo_safe(value):
         return to_mongo_safe(value.__dict__)
     return value
 
+def is_placeholder_player(p):
+    return (
+        p.get("first_name") == "Duplicate"
+        and p.get("last_name") == "Player"
+    )
+
 def get_client(platform, season, mongodb=None):
     match platform:
         case "sleeper":
@@ -198,6 +204,9 @@ class PopulatePlayerCollection(APIView):
 
         for p in players.keys():
             player_data = to_mongo_safe(players[p])
+
+            if is_placeholder_player(player_data):
+                continue
 
             if player_data.get("espn_id") is None:
                 player_data.pop("espn_id", None)
