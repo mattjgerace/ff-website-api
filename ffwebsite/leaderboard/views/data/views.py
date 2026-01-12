@@ -26,11 +26,12 @@ def to_mongo_safe(value):
         return to_mongo_safe(value.__dict__)
     return value
 
-def is_placeholder_player(p):
-    return (
-        p.get("first_name") == "Duplicate"
-        and p.get("last_name") == "Player"
-    )
+def is_placeholder_player(p) -> bool:
+    # One off different duplicate from external api
+    if (p.get('espn_id') == 3116159 and p.get("rotowire_id") == None):
+        return True
+    else:
+        return (p.get("first_name") == "Duplicate" and p.get("last_name") == "Player")
 
 def get_client(platform, season, mongodb=None):
     match platform:
