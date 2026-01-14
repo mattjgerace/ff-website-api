@@ -23,6 +23,8 @@ DATABASES = {
 MONGO_CLIENT = MongoClient(os.environ["MONGO_URL"], 
                            maxIdleTimeMS=30000,
                            serverSelectionTimeoutMS=5000,
+                           heartbeatFrequencyMS=3600000,
+                           connect=False,
                            )
 MONGO_DB = MONGO_CLIENT[os.environ["MONGO_DB_NAME"]]
 
