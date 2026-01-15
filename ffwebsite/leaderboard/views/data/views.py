@@ -28,7 +28,7 @@ def to_mongo_safe(value):
 
 def is_placeholder_player(p) -> bool:
     # One off different duplicate from external api
-    is_duplicate = (p.get("first_name") != "Duplicate" and p.get("last_name") != "Player")
+    is_duplicate = (p.get("first_name") == "Duplicate" and p.get("last_name") == "Player")
     if not is_duplicate and p.get("espn_id") in [3116159, 3919544, 3116159, 3919544]:
         return (p.get("rotowire_id") == None or p.get("swish_id") == 920894)
     return is_duplicate
