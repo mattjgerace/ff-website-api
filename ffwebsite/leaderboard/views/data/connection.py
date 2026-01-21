@@ -150,6 +150,8 @@ class BaseClient(ABC):
                 position = player_info["position"]
             if position == "D/ST":
                 position = "DEF"
+                if first_name == "Redskins":
+                    first_name = "Commanders"
                 filter_query = Player.objects.filter(last_name=first_name, position=position)
             else:
                 filter_query = Player.objects.filter(first_name=first_name, last_name=last_name, position=position)
