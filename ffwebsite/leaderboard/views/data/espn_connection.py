@@ -73,15 +73,21 @@ class EspnClient(BaseClient):
         user_last_key = json.loads(os.environ.get("ESPN_USER_LAST_KEY", "{}"))
         for team in LEAGUE.teams:
             team_info = {}
-            first_name = team.owners[0]["firstName"].capitalize()
-            last_name = team.owners[0]["lastName"].title()
+
+            if len(team.owners) == 0 and self.season == 2015:
+                first_name = "A"
+                last_name = "W"
+                team_info["team_id"] = "0"
+            else:
+                first_name = team.owners[0]["firstName"].capitalize()
+                last_name = team.owners[0]["lastName"].title()
+                team_info["team_id"] = team.owners[0]["id"]
             if first_name in user_first_key.keys():
                 first_name = user_first_key[first_name]
             if last_name in user_last_key.keys():
                 last_name = user_last_key[last_name]
             team_info["first_name"] = first_name
             team_info["last_name"] = last_name
-            team_info["team_id"] = team.owners[0]["id"]
             team_info["roster_id"] = team.team_id
             roster_results.append(team_info)
         return roster_results
@@ -96,7 +102,10 @@ class EspnClient(BaseClient):
         }
         for pick, selection in enumerate(LEAGUE.draft):
             if selection.round_num == 1:
-                draft_results["order"][selection.team.owners[0]["id"]] = selection.round_pick
+                if len(selection.team.owners) == 0 and self.season == 2015:
+                    draft_results["order"]["0"] = 4
+                else:
+                    draft_results["order"][selection.team.owners[0]["id"]] = selection.round_pick
         return draft_results
     
     def get_draft_selections(self):
@@ -109,7 +118,7 @@ class EspnClient(BaseClient):
             draft_selection = selection.__dict__
             draft_selection["pick_no"] = pick+1
             draft_selection["round"] = selection.round_num
-            draft_selection["picked_by"] = selection.team.owners[0]["id"]
+            draft_selection["picked_by"] = "0" if len(selection.team.owners) == 0 and self.season == 2015 else selection.team.owners[0]["id"]
             draft_selection["roster_id"] = selection.team.team_id
             draft_selection["player_id"] = int(draft_selection["playerId"])
             draft_selection["first_name"] = name[0]
