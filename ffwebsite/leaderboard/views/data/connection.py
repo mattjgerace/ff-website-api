@@ -148,8 +148,13 @@ class BaseClient(ABC):
                 first_name = player_info["first_name"]
                 last_name = player_info["last_name"]
                 position = player_info["position"]
-            if Player.objects.filter(first_name=first_name, last_name=last_name, position=position).exists():
-                existing_players = Player.objects.filter(first_name=first_name, last_name=last_name, position=position).all()
+            if position == "D/ST":
+                position = "DEF"
+                filter_query = Player.objects.filter(last_name=first_name, position=position)
+            else:
+                filter_query = Player.objects.filter(first_name=first_name, last_name=last_name, position=position)
+            if filter_query.exists():
+                existing_players = filter_query.all()
                 player_model_possibilities = [player_model for player_model in self.player_model_possibilities if player_model != self.player_model]
                 for model in player_model_possibilities:
                     for existing_player in existing_players:
