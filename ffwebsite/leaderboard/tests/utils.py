@@ -28,7 +28,7 @@ def create_mock_rosters_return():
     for i in range(1, 13):
         roster_results.append({
             "roster_id": i,
-            "owner_id": i,
+            "team_id": i,
             "first_name": "test"+str(i),
             "last_name": "test"+str(i),
             "settings": {"division": i%2}
