@@ -117,8 +117,8 @@ class BaseClient(ABC):
                 #wins = 0,
                 #losses = 0,
                 #ties = 0,
-                division = season_settings.division_mapping.get(str(roster["settings"]["division"]), "N/A") if "settings" in roster.keys() else "N/A",
-                seed = i+1, #need to fix
+                division = season_settings.division_mapping.get(str(roster["settings"]["division"]-1), "N/A") if "settings" in roster.keys() else "N/A",
+                seed = None, #need to fix
                 division_standing = 1,
                 roster_id=roster.get("roster_id", None),
             )

@@ -73,7 +73,7 @@ class EspnClient(BaseClient):
         user_first_key = json.loads(os.environ.get("ESPN_USER_FIRST_KEY", "{}"))
         user_last_key = json.loads(os.environ.get("ESPN_USER_LAST_KEY", "{}"))
         for team in LEAGUE.teams:
-            team_info = {}
+            team_info = {'settings': {}}
 
             if len(team.owners) == 0 and self.season == 2015:
                 first_name = "A"
@@ -90,6 +90,7 @@ class EspnClient(BaseClient):
             team_info["first_name"] = first_name
             team_info["last_name"] = last_name
             team_info["roster_id"] = team.team_id
+            team_info["settings"]["division"] = team.division_id+1
             roster_results.append(team_info)
         return roster_results
     
@@ -160,7 +161,7 @@ class EspnClient(BaseClient):
             }
             away_roster_info["starters"] = [player.playerId
                                             for player in matchup.away_lineup
-                                            if player.slot_position != 'BE' or player.slot_position != 'IR'
+                                            if player.slot_position != 'BE' and player.slot_position != 'IR'
                                             ]
 
             matchups_results.append(home_roster_info)
