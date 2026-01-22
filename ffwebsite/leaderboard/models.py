@@ -95,8 +95,8 @@ class WeeklyMatchups(Model):
     result = CharField()
     weekly_winner = BooleanField(default=False)
     playoff = BooleanField(default=False)
-    
-    #matchup = IntegerField() # ID representing the matchup
+    matchup_id = IntegerField(null=True) # ID representing the matchup
+
     #roster = ArrayField(CharField()) # Player id's #don't don't need
     #starters = ArrayField(CharField()) # Player id's #probably don't need
 
@@ -109,6 +109,7 @@ class ExhibitionWeeklyMatchups(Model):
     result = CharField()
     weekly_winner = BooleanField(default=False)
     playoff = BooleanField(default=False)
+    matchup_id = IntegerField(null=True)  # ID representing the matchup
 
 class PlayerPoints(Model):
     weeklymatchup = ForeignKey(WeeklyMatchups, null=True, on_delete=CASCADE)
@@ -116,6 +117,7 @@ class PlayerPoints(Model):
     player = ForeignKey(Player, on_delete=CASCADE)
     points = DecimalField(max_digits=5, decimal_places=2)
     starter = BooleanField()
+    slot_position = CharField(null=True)
     week = IntegerField()
     season = IntegerField()
     nfl_team = CharField(null=True)

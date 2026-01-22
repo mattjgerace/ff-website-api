@@ -220,10 +220,15 @@ class BaseClient(ABC):
         else:
              self.save_standing_playoff(season_settings, week)
 
-    def save_player_scores(self, weeklymatchup, players_points, starters, is_exhibition):
+    def save_player_scores(self, weeklymatchup, players_points, starters, is_exhibition, player_info):
         player_points = []
         for player_id in players_points.keys():
-            player = self.save_new_player({"player_id": player_id})
+            player = {"player_id": player_id}
+            if player_info:
+                player["first_name"] = player_info[player_id]["first_name"]
+                player["last_name"] = player_info[player_id]["last_name"]
+                player["position"] = player_info[player_id]["position"]
+            player = self.save_new_player(player)
             player_points.append(
                 PlayerPoints(
                     weeklymatchup=None if is_exhibition else weeklymatchup,
@@ -254,7 +259,8 @@ class BaseClient(ABC):
                             season_settings=season_settings,
                             team=team_manager,
                             opp=team_manager_opp,
-                            playoff=True if week >= season_settings.playoff_week_start else False
+                            playoff=True if week >= season_settings.playoff_week_start else False,
+                            matchup_id = matchup["matchup_id"]
                             )
                         is_exhibition = True
                     else:
@@ -263,13 +269,15 @@ class BaseClient(ABC):
                             season_settings=season_settings,
                             team=team_manager,
                             opp=team_manager_opp,
-                            playoff=True if week >= season_settings.playoff_week_start else False
+                            playoff=True if week >= season_settings.playoff_week_start else False,
+                            matchup_id = matchup["matchup_id"]
                             #roster=matchup.players, #might not need
                             #starters=matchup.starters, #might not need
                             )
                         is_exhibition = False
                     weeklymatchup.save()
-                    self.save_player_scores(weeklymatchup, matchup["players_points"], matchup["starters"], is_exhibition)
+                    player_info = matchup.get("player_info", None)
+                    self.save_player_scores(weeklymatchup, matchup["players_points"], matchup["starters"], is_exhibition, player_info)
 
     def save_team_scores(self, season_settings, week):
         weekly_matchups = WeeklyMatchups.objects.filter(week=week, season_settings=season_settings)
