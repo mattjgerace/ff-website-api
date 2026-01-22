@@ -49,6 +49,7 @@ def create_mock_draft_selections_return():
     for i in range(1, 13):
         draft_selection_results.append({
             "roster_id": i,
+            "picked_by": i,
             "player_id": str(662+i),
             "round": i,
             "pick_no": i
