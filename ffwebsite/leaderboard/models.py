@@ -14,12 +14,11 @@ class TeamManagerAPP(Model):
 
 class TeamManagerESPN(Model):
     team_manager = ForeignKey(TeamManagerAPP, on_delete=CASCADE)
-    team_id = CharField()
+    team_id = CharField(unique=True)
 
 class TeamManagerSLEEPER(Model):
     team_manager = ForeignKey(TeamManagerAPP, on_delete=CASCADE)
-    team_id = CharField()
-    user_id = CharField()
+    team_id = CharField(unique=True)
 
 class Player(Model):
     first_name = CharField()
@@ -28,14 +27,14 @@ class Player(Model):
 
 class PlayerSLEEPER(Model):
     player = ForeignKey(Player, on_delete=CASCADE)
-    external_player_id = CharField()
+    external_player_id = CharField(unique=True)
 
 class PlayerESPN(Model):
     player = ForeignKey(Player, on_delete=CASCADE)
-    external_player_id = CharField()
+    external_player_id = CharField(unique=True)
 
 class SeasonSettings(Model):
-    season = IntegerField() #Specifies the year in which the season took place
+    season = IntegerField(unique=True) #Specifies the year in which the season took place
     platform = CharField() #Specifies which platform the season was played on
     playoff_week_start = IntegerField() 
     division_mapping = JSONField() #Specifies the division naming
@@ -96,8 +95,8 @@ class WeeklyMatchups(Model):
     result = CharField()
     weekly_winner = BooleanField(default=False)
     playoff = BooleanField(default=False)
-    
-    #matchup = IntegerField() # ID representing the matchup
+    matchup_id = IntegerField(null=True) # ID representing the matchup
+
     #roster = ArrayField(CharField()) # Player id's #don't don't need
     #starters = ArrayField(CharField()) # Player id's #probably don't need
 
@@ -105,11 +104,12 @@ class ExhibitionWeeklyMatchups(Model):
     season_settings = ForeignKey(SeasonSettings, on_delete=CASCADE)
     week = IntegerField()
     team = ForeignKey(TeamManagerAPP, on_delete=CASCADE)
-    opp = ForeignKey(TeamManagerAPP, null=True, on_delete=CASCADE, related_name='exhibition_opponent') #opp team id--this could be repetitive ...
+    opp = ForeignKey(TeamManagerAPP, null=True, on_delete=CASCADE, related_name='exhibition_opponent')
     score = DecimalField(max_digits=5, decimal_places=2, null=True)
     result = CharField()
     weekly_winner = BooleanField(default=False)
     playoff = BooleanField(default=False)
+    matchup_id = IntegerField(null=True)  # ID representing the matchup
 
 class PlayerPoints(Model):
     weeklymatchup = ForeignKey(WeeklyMatchups, null=True, on_delete=CASCADE)
@@ -117,6 +117,7 @@ class PlayerPoints(Model):
     player = ForeignKey(Player, on_delete=CASCADE)
     points = DecimalField(max_digits=5, decimal_places=2)
     starter = BooleanField()
+    slot_position = CharField(null=True)
     week = IntegerField()
     season = IntegerField()
     nfl_team = CharField(null=True)
@@ -135,3 +136,4 @@ class Leaderboard(Model):
     draft_pick = IntegerField(null=True)
     season_winner = BooleanField(default=False)
     division_winner = BooleanField(default=False)
+    roster_id = CharField(default=None, null=True)

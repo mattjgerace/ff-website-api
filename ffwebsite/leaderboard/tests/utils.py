@@ -28,7 +28,7 @@ def create_mock_rosters_return():
     for i in range(1, 13):
         roster_results.append({
             "roster_id": i,
-            "owner_id": i,
+            "team_id": i,
             "first_name": "test"+str(i),
             "last_name": "test"+str(i),
             "settings": {"division": i%2}
@@ -49,6 +49,7 @@ def create_mock_draft_selections_return():
     for i in range(1, 13):
         draft_selection_results.append({
             "roster_id": i,
+            "picked_by": i,
             "player_id": str(662+i),
             "round": i,
             "pick_no": i

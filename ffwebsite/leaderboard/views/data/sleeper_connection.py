@@ -56,15 +56,15 @@ class SleeperClient(BaseClient):
         league_settings["playoff_round_type_enum"] = league_settings["playoff_round_type_enum"].value
         division_mapping = {}
         if league_info.metadata.division_1:
-            division_mapping["1"] = league_info.metadata.division_1
+            division_mapping["0"] = league_info.metadata.division_1
         if league_info.metadata.division_2:
-            division_mapping["2"] = league_info.metadata.division_2
+            division_mapping["1"] = league_info.metadata.division_2
         if league_info.metadata.division_3:
-            division_mapping["3"] = league_info.metadata.division_3
+            division_mapping["2"] = league_info.metadata.division_3
         if league_info.metadata.division_4:
-            division_mapping["4"] = league_info.metadata.division_4
+            division_mapping["3"] = league_info.metadata.division_4
         if league_info.metadata.division_5:
-            division_mapping["5"] = league_info.metadata.division_5
+            division_mapping["4"] = league_info.metadata.division_5
         league_results = {
                 "season": league_info.season,
                 "platform": self.platform,
@@ -90,6 +90,7 @@ class SleeperClient(BaseClient):
             roster["settings"] = roster["settings"].__dict__
             roster["first_name"] = name[0]
             roster["last_name"] = f"{name[1]} {name[2]}" if len(name) > 2 else name[1]
+            roster["team_id"] = roster["owner_id"]
         return roster_results
     
     def get_draft(self):
@@ -104,7 +105,13 @@ class SleeperClient(BaseClient):
     
     def get_draft_selections(self):
         draft_selections = self.get_draft_selections_api()
-        return [selection.__dict__ for selection in draft_selections]
+        draft_selections_results = [selection.__dict__ for selection in draft_selections]
+        for draft_selection in draft_selections_results:
+            metadata = draft_selection["metadata"].__dict__
+            draft_selection["first_name"] = metadata['first_name']
+            draft_selection["last_name"] = metadata['last_name']
+            draft_selection["position"] = metadata['position']
+        return draft_selections_results
     
     def get_matchups(self, season, week):
         week_matchups = self.get_matchups_api(season, week)

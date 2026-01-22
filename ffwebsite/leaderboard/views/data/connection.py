@@ -41,8 +41,12 @@ class BaseClient(ABC):
     def _set_draft_id(self):
         pass
 
-    def get_team_manager(self, team_id):
-        return self.manager_model.objects.get(team_id=team_id).team_manager
+    def get_team_manager(self, team_id=None, roster_id=None, season_settings=None):
+        if team_id:
+            return self.manager_model.objects.get(team_id=team_id).team_manager
+        elif roster_id and season_settings:
+            return Leaderboard.objects.get(season_settings=season_settings, roster_id=roster_id).team
+
 
     @abstractmethod
     def get_id_api(self):
@@ -84,8 +88,8 @@ class BaseClient(ABC):
         platform_teams = []
         active_managers = []
         for i, roster in enumerate(roster_info):
-            if self.manager_model.objects.filter(team_id = roster["roster_id"]).exists():
-                team_manager = self.get_team_manager(roster["roster_id"])
+            if self.manager_model.objects.filter(team_id = roster["team_id"]).exists():
+                team_manager = self.get_team_manager(team_id = roster["team_id"])
             else:
                 if not TeamManagerAPP.objects.filter(first_name=roster["first_name"], last_name=roster["last_name"]).exists():
                     team_manager = TeamManagerAPP(
@@ -96,19 +100,13 @@ class BaseClient(ABC):
                     team_manager.save()
                 else:
                     team_manager = TeamManagerAPP.objects.get(first_name=roster["first_name"], last_name=roster["last_name"])
-                    
-                if "owner_id" in roster.keys():
-                    platform_model = self.manager_model(
-                        team_manager=team_manager,
-                        team_id=roster["roster_id"],
-                        user_id=roster["owner_id"] #might be able to get rid of
-                    )
-                else:
-                    platform_model = self.manager_model(
-                        team_manager=team_manager,
-                        team_id=roster["roster_id"],
-                    )
+
+                platform_model = self.manager_model(
+                    team_manager=team_manager,
+                    team_id=roster["team_id"],
+                )
                 platform_teams.append(platform_model)
+
             team_manager.active = True
             team_manager.save()
             active_managers.append(team_manager.pk)
@@ -119,9 +117,10 @@ class BaseClient(ABC):
                 #wins = 0,
                 #losses = 0,
                 #ties = 0,
-                division = season_settings.division_mapping.get(str(roster["settings"]["division"]), "N/A") if "settings" in roster.keys() else "N/A",
-                seed = i+1, #need to fix
+                division = season_settings.division_mapping.get(str(roster["settings"]["division"]-1), "N/A") if "settings" in roster.keys() else "N/A",
+                seed = None, #need to fix
                 division_standing = 1,
+                roster_id=roster.get("roster_id", None),
             )
             )
         if len(platform_teams) > 0:
@@ -136,34 +135,45 @@ class BaseClient(ABC):
         self.save_draft_order(draft_info, season_settings)
         self.save_draft_selections(draft, self.get_draft_selections())
 
-    def save_new_player(self, player_id):
-        if self.player_model.objects.filter(external_player_id=player_id).exists():
-            return self.player_model.objects.get(external_player_id=player_id).player
+    def save_new_player(self, player_info):
+        if self.player_model.objects.filter(external_player_id=player_info["player_id"]).exists():
+            return self.player_model.objects.get(external_player_id=player_info["player_id"]).player
         else:
-            player_details = self.mongodb["players"].find_one({self.mongo_id: player_id})
-            first_name = player_details["first_name"]
-            last_name = player_details["last_name"]
-            position = player_details["position"]
-            if Player.objects.filter(first_name=first_name, last_name=last_name, position=position).exists():
-                existing_players = Player.objects.filter(first_name=first_name, last_name=last_name, position=position).all()
-                for model in self.player_model_possibilities:
-                    if model != self.player_model:
-                        for existing_player in existing_players:
-                            if model.objects.filter(player=existing_player).exists():
-                                self.player_model.objects.create(
-                                    player=existing_player,
-                                    external_player_id=player_id
-                                )
-                                return existing_player
-            player = Player(
+            player_details = self.mongodb["players"].find_one({self.mongo_id: player_info["player_id"]})
+            if player_details:
+                first_name = player_details["first_name"]
+                last_name = player_details["last_name"]
+                position = player_details["position"]
+            else:
+                first_name = player_info["first_name"]
+                last_name = player_info["last_name"]
+                position = player_info["position"]
+            if position == "D/ST":
+                position = "DEF"
+                if first_name == "Redskins":
+                    first_name = "Commanders"
+                filter_query = Player.objects.filter(last_name=first_name, position=position)
+            else:
+                filter_query = Player.objects.filter(first_name=first_name, last_name=last_name, position=position)
+            if filter_query.exists():
+                existing_players = filter_query.all()
+                player_model_possibilities = [player_model for player_model in self.player_model_possibilities if player_model != self.player_model]
+                for model in player_model_possibilities:
+                    for existing_player in existing_players:
+                        if model.objects.filter(player=existing_player).exists():
+                            self.player_model.objects.create(
+                                player=existing_player,
+                                external_player_id=player_info["player_id"]
+                            )
+                            return existing_player
+            player, created = Player.objects.get_or_create(
                 first_name = first_name,
                 last_name = last_name,
                 position = position,
-            )   
-            player.save()
+            )
             self.player_model.objects.create(
                 player=player,
-                external_player_id=player_id
+                external_player_id=player_info["player_id"]
             )
             return player
 
@@ -175,7 +185,7 @@ class BaseClient(ABC):
     
     def save_draft_order(self, draft_info, season_settings):
         for key, value in draft_info["order"].items():
-            team_manager =self.get_team_manager(key)
+            team_manager = self.get_team_manager(team_id=key)
             leaderboard = Leaderboard.objects.get(season_settings=season_settings, team=team_manager)
             leaderboard.draft_pick = value
             leaderboard.save()
@@ -186,8 +196,8 @@ class BaseClient(ABC):
             draft_picks.append(
                 DraftPicks(
                     draft=draft,
-                    team=self.get_team_manager(selection["roster_id"]),
-                    player=self.save_new_player(selection["player_id"]),
+                    team=self.get_team_manager(team_id=selection["picked_by"]),
+                    player=self.save_new_player(selection),
                     round_num=selection["round"] if not (self.season == 2023 and (selection["player_id"] == '1689' or selection["player_id"] == '5849')) else (10 if selection["player_id"] == '1689' else 12),
                     pick_num=selection["pick_no"] if not (self.season == 2023 and (selection["player_id"] == '1689' or selection["player_id"] == '5849')) else (119 if selection["player_id"] == '1689' else 144) 
                 )
@@ -210,10 +220,15 @@ class BaseClient(ABC):
         else:
              self.save_standing_playoff(season_settings, week)
 
-    def save_player_scores(self, weeklymatchup, players_points, starters, is_exhibition):
+    def save_player_scores(self, weeklymatchup, players_points, starters, is_exhibition, player_info):
         player_points = []
         for player_id in players_points.keys():
-            player = self.save_new_player(player_id)
+            player = {"player_id": player_id}
+            if player_info:
+                player["first_name"] = player_info[player_id]["first_name"]
+                player["last_name"] = player_info[player_id]["last_name"]
+                player["position"] = player_info[player_id]["position"]
+            player = self.save_new_player(player)
             player_points.append(
                 PlayerPoints(
                     weeklymatchup=None if is_exhibition else weeklymatchup,
@@ -235,16 +250,17 @@ class BaseClient(ABC):
         for matchup in week_matchups_info:
             if matchup["matchup_id"] != None:
                 if matchup["matchup_id"] != None:
-                    team_manager = self.get_team_manager(matchup["roster_id"])
+                    team_manager = self.get_team_manager(roster_id=matchup["roster_id"], season_settings=season_settings)
                     opp_roster_id = games[matchup["matchup_id"]-1][0] if games[matchup["matchup_id"]-1][0] != matchup["roster_id"] else games[matchup["matchup_id"]-1][1]
-                    team_manager_opp = self.get_team_manager(opp_roster_id)
+                    team_manager_opp = self.get_team_manager(roster_id=opp_roster_id, season_settings=season_settings)
                     if week >= season_settings.playoff_week_start and Leaderboard.objects.get(season_settings=season_settings, team=team_manager).standing:
                         weeklymatchup = ExhibitionWeeklyMatchups(
                             week=week,
                             season_settings=season_settings,
                             team=team_manager,
                             opp=team_manager_opp,
-                            playoff=True if week >= season_settings.playoff_week_start else False
+                            playoff=True if week >= season_settings.playoff_week_start else False,
+                            matchup_id = matchup["matchup_id"]
                             )
                         is_exhibition = True
                     else:
@@ -253,13 +269,15 @@ class BaseClient(ABC):
                             season_settings=season_settings,
                             team=team_manager,
                             opp=team_manager_opp,
-                            playoff=True if week >= season_settings.playoff_week_start else False
+                            playoff=True if week >= season_settings.playoff_week_start else False,
+                            matchup_id = matchup["matchup_id"]
                             #roster=matchup.players, #might not need
                             #starters=matchup.starters, #might not need
                             )
                         is_exhibition = False
                     weeklymatchup.save()
-                    self.save_player_scores(weeklymatchup, matchup["players_points"], matchup["starters"], is_exhibition)
+                    player_info = matchup.get("player_info", None)
+                    self.save_player_scores(weeklymatchup, matchup["players_points"], matchup["starters"], is_exhibition, player_info)
 
     def save_team_scores(self, season_settings, week):
         weekly_matchups = WeeklyMatchups.objects.filter(week=week, season_settings=season_settings)
