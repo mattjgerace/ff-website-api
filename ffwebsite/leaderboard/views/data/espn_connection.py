@@ -147,7 +147,7 @@ class EspnClient(BaseClient):
                                                 }
             home_roster_info["starters"] = [player.playerId
                                             for player in matchup.home_lineup
-                                            if player.slot_position != 'BE' or player.slot_position != 'IR'
+                                            if player.slot_position != 'BE' and player.slot_position != 'IR'
                                             ]
             away_roster_info["players_points"] = {player.playerId: player.points for player in matchup.away_lineup}
             away_roster_info["player_info"] = {player.playerId: {
