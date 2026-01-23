@@ -10,7 +10,7 @@ def create_mock_season_settings_return(platform, season, league_id):
     league_results = {
             "season": season,
             "platform": platform,
-            "league_settings": {'divisions': 2},
+            "league_settings": {'divisions': 2, 'playoff_team_num': 6},
             "division_mapping": {1: "Blue", 2: "Red"},
             "roster_settings": [],
             "scoring_settings": {},

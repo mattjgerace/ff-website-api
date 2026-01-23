@@ -36,7 +36,8 @@ class PlayerESPN(Model):
 class SeasonSettings(Model):
     season = IntegerField(unique=True) #Specifies the year in which the season took place
     platform = CharField() #Specifies which platform the season was played on
-    playoff_week_start = IntegerField() 
+    playoff_week_start = IntegerField()
+    playoff_team_num = IntegerField(default=6)
     division_mapping = JSONField() #Specifies the division naming
     league_settings = JSONField() #Specifies the league's rules for the season
     scoring_settings = JSONField() #Specifies the league's scoring rules for the season

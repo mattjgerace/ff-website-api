@@ -59,6 +59,7 @@ class EspnClient(BaseClient):
                 "roster_settings": roster_settings,
                 "scoring_settings": LEAGUE.settings.scoring_format,
                 "playoff_week_start": LEAGUE.settings.reg_season_count+1,
+                "playoff_team_num": LEAGUE.settings.playoff_team_count,
                 "division_mapping": LEAGUE.settings.division_map,
         }
         league_results["league_settings"]["divisions"] = len(league_results["league_settings"]["division_map"].keys())

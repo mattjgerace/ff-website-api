@@ -73,6 +73,7 @@ class SleeperClient(BaseClient):
                 "roster_settings": [position.name for position in league_info.roster_positions],
                 "scoring_settings": league_info.scoring_settings.__dict__,
                 "playoff_week_start": league_settings["playoff_week_start"],
+                "playoff_team_num": league_settings["playoff_teams"],
         }
         platform_results = {
                 "league_id": self.league_id,
