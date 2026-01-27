@@ -315,12 +315,8 @@ class BaseClient(ABC):
         weekly_matchups = WeeklyMatchups.objects.filter(week=week, season_settings=season_settings.pk)
         for matchup in weekly_matchups:
             #lb = Leaderboard.objects.get(team=matchup.team, season_settings=matchup.season_settings)
-            try:
-                opp_matchup = WeeklyMatchups.objects.get(team=matchup.opp, opp=matchup.team, week=matchup.week,
+            opp_matchup = WeeklyMatchups.objects.get(team=matchup.opp, opp=matchup.team, week=matchup.week,
                                                      season_settings=matchup.season_settings)
-            except:
-                print(matchup.opp, matchup.team)
-                print(matchup.matchup_id)
             if matchup.score > opp_matchup.score:
                 #lb.wins += 1
                 matchup.result = "W"

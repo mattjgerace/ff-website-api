@@ -134,7 +134,7 @@ class EspnClient(BaseClient):
         LEAGUE = self.get_league_api()
         matchups_results = []
         for matchup_id, matchup in enumerate(LEAGUE.box_scores(week)):
-            home_roster_info = {"roster_id": matchup.home_team.team_id, "matchup_id": matchup_id+1}
+            home_roster_info = {"roster_id": matchup.home_team.team_id, "matchup_id": matchup_id}
             home_roster_info["players_points"] = {player.playerId : player.points for player in matchup.home_lineup}
             home_roster_info["player_info"] = {player.playerId : {
                                                 "game_date": player.game_date if hasattr(player, 'game_date') else None,
@@ -150,7 +150,7 @@ class EspnClient(BaseClient):
                                             if player.slot_position != 'BE' and player.slot_position != 'IR'
                                             ]
             if matchup.away_lineup:
-                away_roster_info = {"roster_id": matchup.away_team.team_id, "matchup_id": matchup_id + 1}
+                away_roster_info = {"roster_id": matchup.away_team.team_id, "matchup_id": matchup_id}
                 away_roster_info["players_points"] = {player.playerId: player.points for player in matchup.away_lineup}
                 away_roster_info["player_info"] = {player.playerId: {
                     "game_date": player.game_date if hasattr(player, 'game_date') else None,
