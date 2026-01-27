@@ -248,36 +248,35 @@ class BaseClient(ABC):
             if matchup["matchup_id"] != None:
                 games[matchup["matchup_id"]-1].append(matchup["roster_id"])
         for matchup in week_matchups_info:
-            if matchup["matchup_id"] != None:
-                if matchup["matchup_id"] != None:
-                    team_manager = self.get_team_manager(roster_id=matchup["roster_id"], season_settings=season_settings)
-                    opp_roster_id = games[matchup["matchup_id"]-1][0] if games[matchup["matchup_id"]-1][0] != matchup["roster_id"] else games[matchup["matchup_id"]-1][1]
-                    team_manager_opp = self.get_team_manager(roster_id=opp_roster_id, season_settings=season_settings)
-                    if week >= season_settings.playoff_week_start and Leaderboard.objects.get(season_settings=season_settings, team=team_manager).standing:
-                        weeklymatchup = ExhibitionWeeklyMatchups(
-                            week=week,
-                            season_settings=season_settings,
-                            team=team_manager,
-                            opp=team_manager_opp,
-                            playoff=True if week >= season_settings.playoff_week_start else False,
-                            matchup_id = matchup["matchup_id"]
-                            )
-                        is_exhibition = True
-                    else:
-                        weeklymatchup = WeeklyMatchups(
-                            week=week,
-                            season_settings=season_settings,
-                            team=team_manager,
-                            opp=team_manager_opp,
-                            playoff=True if week >= season_settings.playoff_week_start else False,
-                            matchup_id = matchup["matchup_id"]
-                            #roster=matchup.players, #might not need
-                            #starters=matchup.starters, #might not need
-                            )
-                        is_exhibition = False
-                    weeklymatchup.save()
-                    player_info = matchup.get("player_info", None)
-                    self.save_player_scores(weeklymatchup, matchup["players_points"], matchup["starters"], is_exhibition, player_info)
+            if matchup["matchup_id"] is not None:
+                team_manager = self.get_team_manager(roster_id=matchup["roster_id"], season_settings=season_settings)
+                opp_roster_id = games[matchup["matchup_id"]-1][0] if games[matchup["matchup_id"]-1][0] != matchup["roster_id"] else games[matchup["matchup_id"]-1][1]
+                team_manager_opp = self.get_team_manager(roster_id=opp_roster_id, season_settings=season_settings)
+                if week >= season_settings.playoff_week_start and Leaderboard.objects.get(season_settings=season_settings, team=team_manager).standing:
+                    weeklymatchup = ExhibitionWeeklyMatchups(
+                        week=week,
+                        season_settings=season_settings,
+                        team=team_manager,
+                        opp=team_manager_opp,
+                        playoff=True if week >= season_settings.playoff_week_start else False,
+                        matchup_id = matchup["matchup_id"]
+                        )
+                    is_exhibition = True
+                else:
+                    weeklymatchup = WeeklyMatchups(
+                        week=week,
+                        season_settings=season_settings,
+                        team=team_manager,
+                        opp=team_manager_opp,
+                        playoff=True if week >= season_settings.playoff_week_start else False,
+                        matchup_id = matchup["matchup_id"]
+                        #roster=matchup.players, #might not need
+                        #starters=matchup.starters, #might not need
+                        )
+                    is_exhibition = False
+                weeklymatchup.save()
+                player_info = matchup.get("player_info", None)
+                self.save_player_scores(weeklymatchup, matchup["players_points"], matchup["starters"], is_exhibition, player_info)
 
     def save_team_scores(self, season_settings, week):
         weekly_matchups = WeeklyMatchups.objects.filter(week=week, season_settings=season_settings)
@@ -316,8 +315,12 @@ class BaseClient(ABC):
         weekly_matchups = WeeklyMatchups.objects.filter(week=week, season_settings=season_settings.pk)
         for matchup in weekly_matchups:
             #lb = Leaderboard.objects.get(team=matchup.team, season_settings=matchup.season_settings)
-            opp_matchup = WeeklyMatchups.objects.get(team=matchup.opp, opp=matchup.team, week=matchup.week, 
+            try:
+                opp_matchup = WeeklyMatchups.objects.get(team=matchup.opp, opp=matchup.team, week=matchup.week,
                                                      season_settings=matchup.season_settings)
+            except:
+                print(matchup.opp, matchup.team)
+                print(matchup.matchup_id)
             if matchup.score > opp_matchup.score:
                 #lb.wins += 1
                 matchup.result = "W"
@@ -340,7 +343,7 @@ class BaseClient(ABC):
     
     def save_standing_non_playoff(self, season_settings):
         non_playoff_teams = Leaderboard.objects.filter(
-                    seed__gt=6, season_settings_id=season_settings.pk #TODO-make # playoff teams dynamic
+                    seed__gt=season_settings.playoff_team_num, season_settings_id=season_settings.pk
                 ).all()
         for non_playoff_team in non_playoff_teams:
             non_playoff_team.standing = non_playoff_team.seed
@@ -352,7 +355,7 @@ class BaseClient(ABC):
                 ).order_by('-seed').values_list('team_id', flat=True)
         if len(playoff_teams) == 4:
             previous_playoff_teams = Leaderboard.objects.filter(
-                                standing__lte=6, standing__gte=5, season_settings_id=season_settings.pk
+                                standing__lte=season_settings.playoff_team_num, standing__gte=season_settings.playoff_team_num-1, season_settings_id=season_settings.pk
                             ).order_by('-seed').values_list('team_id', flat=True) #maybe change this to get all playoff teams from previous week and remove the current
             previous_playoff_losing_teams = WeeklyMatchups.objects.filter(
                                     team_id__in=previous_playoff_teams, 

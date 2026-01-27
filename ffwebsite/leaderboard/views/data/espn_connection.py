@@ -135,7 +135,6 @@ class EspnClient(BaseClient):
         matchups_results = []
         for matchup_id, matchup in enumerate(LEAGUE.box_scores(week)):
             home_roster_info = {"roster_id": matchup.home_team.team_id, "matchup_id": matchup_id+1}
-            away_roster_info = {"roster_id": matchup.away_team.team_id, "matchup_id": matchup_id+1}
             home_roster_info["players_points"] = {player.playerId : player.points for player in matchup.home_lineup}
             home_roster_info["player_info"] = {player.playerId : {
                                                 "game_date": player.game_date if hasattr(player, 'game_date') else None,
@@ -150,21 +149,24 @@ class EspnClient(BaseClient):
                                             for player in matchup.home_lineup
                                             if player.slot_position != 'BE' and player.slot_position != 'IR'
                                             ]
-            away_roster_info["players_points"] = {player.playerId: player.points for player in matchup.away_lineup}
-            away_roster_info["player_info"] = {player.playerId: {
-                "game_date": player.game_date if hasattr(player, 'game_date') else None,
-                "first_name": (player.name.split(" "))[0],
-                "last_name": " ".join((player.name.split(" "))[1:]),
-                "position": player.position,
-                "slot_position": player.slot_position,
-            }
-                for player in matchup.away_lineup
-            }
-            away_roster_info["starters"] = [player.playerId
-                                            for player in matchup.away_lineup
-                                            if player.slot_position != 'BE' and player.slot_position != 'IR'
-                                            ]
-
+            if matchup.away_lineup:
+                away_roster_info = {"roster_id": matchup.away_team.team_id, "matchup_id": matchup_id + 1}
+                away_roster_info["players_points"] = {player.playerId: player.points for player in matchup.away_lineup}
+                away_roster_info["player_info"] = {player.playerId: {
+                    "game_date": player.game_date if hasattr(player, 'game_date') else None,
+                    "first_name": (player.name.split(" "))[0],
+                    "last_name": " ".join((player.name.split(" "))[1:]),
+                    "position": player.position,
+                    "slot_position": player.slot_position,
+                }
+                    for player in matchup.away_lineup
+                }
+                away_roster_info["starters"] = [player.playerId
+                                                for player in matchup.away_lineup
+                                                if player.slot_position != 'BE' and player.slot_position != 'IR'
+                                                ]
+                matchups_results.append(away_roster_info)
+            else:
+                home_roster_info["matchup_id"] = None
             matchups_results.append(home_roster_info)
-            matchups_results.append(away_roster_info)
         return matchups_results
