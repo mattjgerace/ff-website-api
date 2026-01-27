@@ -13,5 +13,5 @@ class SeasonSettingsViewSet(ModelViewSet):
     permission_classes = [HasAPIToken]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['season']
-    queryset = SeasonSettings.objects.all()
+    queryset = SeasonSettings.objects.all().order_by('-season')
     serializer_class = SeasonSettingsSerializer
