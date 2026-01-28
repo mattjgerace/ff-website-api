@@ -10,7 +10,7 @@ def create_mock_season_settings_return(platform, season, league_id):
     league_results = {
             "season": season,
             "platform": platform,
-            "league_settings": {'divisions': 2},
+            "league_settings": {'divisions': 2, 'playoff_team_num': 6},
             "division_mapping": {1: "Blue", 2: "Red"},
             "roster_settings": [],
             "scoring_settings": {},
@@ -28,7 +28,9 @@ def create_mock_rosters_return():
     for i in range(1, 13):
         roster_results.append({
             "roster_id": i,
-            "owner_id": i,
+            "team_id": i,
+            "first_name": "test"+str(i),
+            "last_name": "test"+str(i),
             "settings": {"division": i%2}
         })
     return roster_results
@@ -47,6 +49,7 @@ def create_mock_draft_selections_return():
     for i in range(1, 13):
         draft_selection_results.append({
             "roster_id": i,
+            "picked_by": i,
             "player_id": str(662+i),
             "round": i,
             "pick_no": i

@@ -26,6 +26,13 @@ def to_mongo_safe(value):
         return to_mongo_safe(value.__dict__)
     return value
 
+def is_placeholder_player(p) -> bool:
+    # One off different duplicate from external api
+    is_duplicate = (p.get("first_name") == "Duplicate" and p.get("last_name") == "Player")
+    if not is_duplicate and p.get("espn_id") in [3116159, 3919544, 4035577]:
+        return (p.get("rotowire_id") == None or p.get("swish_id") == 920894)
+    return is_duplicate
+
 def get_client(platform, season, mongodb=None):
     match platform:
         case "sleeper":
@@ -75,8 +82,8 @@ class PopulateNewTeamsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         else:
-            season_settings = SeasonSettings.objects.get(season=season)
-            if season_settings:
+            if SeasonSettings.objects.filter(season=season).exists():
+                season_settings = SeasonSettings.objects.get(season=season)
                 if Leaderboard.objects.filter(season_settings=season_settings).exists():
                     return Response(
                     {"error": f"Teams are already populated for the {season} season"},
@@ -186,6 +193,10 @@ class PopulatePlayerCollection(APIView):
                             )
         mongodb.drop_collection("players")
         players_collection = mongodb["players"]
+        players_collection.create_index("espn_id", 
+                                        unique=True, 
+                                        partialFilterExpression={"espn_id": {"$exists": True}}
+                                        )
 
         client = get_client("sleeper", "2023")
         players = client.get_players_api()
@@ -194,6 +205,12 @@ class PopulatePlayerCollection(APIView):
 
         for p in players.keys():
             player_data = to_mongo_safe(players[p])
+
+            if is_placeholder_player(player_data):
+                continue
+
+            if player_data.get("espn_id") is None:
+                player_data.pop("espn_id", None)
             
             doc = {
                 "_id": str(player_data["player_id"]),

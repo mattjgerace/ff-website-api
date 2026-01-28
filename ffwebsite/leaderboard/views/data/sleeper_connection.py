@@ -10,6 +10,7 @@ class SleeperClient(BaseClient):
 
     def _set_platform(self):
         self.platform = "sleeper"
+        self.mongo_id = "_id"
         self.sport = Sport.NFL
 
     def _set_models(self):
@@ -21,6 +22,9 @@ class SleeperClient(BaseClient):
         draft_id = season_settings.platform_season_settings.draft_id
         if draft_id:
             self.draft_id = draft_id
+    
+    def get_league_id(self):
+        return self.get_id_api()
 
     def get_id_api(self):
         league_data = {league.name: league.league_id for league in LeagueAPIClient.get_user_leagues_for_year(user_id=os.environ['SLEEPER_USER_ID'], sport=self.sport, year=self.season)
@@ -52,15 +56,15 @@ class SleeperClient(BaseClient):
         league_settings["playoff_round_type_enum"] = league_settings["playoff_round_type_enum"].value
         division_mapping = {}
         if league_info.metadata.division_1:
-            division_mapping["1"] = league_info.metadata.division_1
+            division_mapping["0"] = league_info.metadata.division_1
         if league_info.metadata.division_2:
-            division_mapping["2"] = league_info.metadata.division_2
+            division_mapping["1"] = league_info.metadata.division_2
         if league_info.metadata.division_3:
-            division_mapping["3"] = league_info.metadata.division_3
+            division_mapping["2"] = league_info.metadata.division_3
         if league_info.metadata.division_4:
-            division_mapping["4"] = league_info.metadata.division_4
+            division_mapping["3"] = league_info.metadata.division_4
         if league_info.metadata.division_5:
-            division_mapping["5"] = league_info.metadata.division_5
+            division_mapping["4"] = league_info.metadata.division_5
         league_results = {
                 "season": league_info.season,
                 "platform": self.platform,
@@ -69,6 +73,7 @@ class SleeperClient(BaseClient):
                 "roster_settings": [position.name for position in league_info.roster_positions],
                 "scoring_settings": league_info.scoring_settings.__dict__,
                 "playoff_week_start": league_settings["playoff_week_start"],
+                "playoff_team_num": league_settings["playoff_teams"],
         }
         platform_results = {
                 "league_id": self.league_id,
@@ -80,8 +85,13 @@ class SleeperClient(BaseClient):
     def get_managers(self):
         roster_info = self.get_rosters_api()
         roster_results = [roster.__dict__ for roster in roster_info]
+        user_key = json.loads(os.environ.get("SLEEPER_USER_KEY", "{}"))
         for roster in roster_results:
+            name = user_key[str(roster["roster_id"])].split()
             roster["settings"] = roster["settings"].__dict__
+            roster["first_name"] = name[0]
+            roster["last_name"] = f"{name[1]} {name[2]}" if len(name) > 2 else name[1]
+            roster["team_id"] = roster["owner_id"]
         return roster_results
     
     def get_draft(self):
@@ -96,7 +106,13 @@ class SleeperClient(BaseClient):
     
     def get_draft_selections(self):
         draft_selections = self.get_draft_selections_api()
-        return [selection.__dict__ for selection in draft_selections]
+        draft_selections_results = [selection.__dict__ for selection in draft_selections]
+        for draft_selection in draft_selections_results:
+            metadata = draft_selection["metadata"].__dict__
+            draft_selection["first_name"] = metadata['first_name']
+            draft_selection["last_name"] = metadata['last_name']
+            draft_selection["position"] = metadata['position']
+        return draft_selections_results
     
     def get_matchups(self, season, week):
         week_matchups = self.get_matchups_api(season, week)
