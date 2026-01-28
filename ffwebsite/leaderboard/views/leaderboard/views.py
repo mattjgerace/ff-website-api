@@ -9,7 +9,7 @@ from leaderboard.views.leaderboard.serializers import AllTimeLeaderboardSerializ
 
 from django.db import connection
 
-from django.db.models import Prefetch, Sum, OuterRef, Subquery
+from django.db.models import Prefetch, Sum, OuterRef, Subquery, FloatField, ExpressionWrapper
 from django.db.models import Sum, Max, Case, When, Count, F, Avg, Q, Value, BooleanField, CharField, IntegerField, DecimalField
 from django.db.models.functions import Rank,DenseRank
 from django.db.models.expressions import Window
@@ -95,6 +95,30 @@ class LeaderboardViewSet(ModelViewSet):
         #subquery_seed =  Leaderboard.objects.filter(team=OuterRef('team')).values('seed')[:1]
         #subquery_standing = Leaderboard.objects.filter(team=OuterRef('team')).values('standing')[:1]
 
+        subquery_champion_num = Leaderboard.objects.filter(
+            season_settings=OuterRef('season_settings'),
+            standing=1
+        ).values('season_settings').annotate(
+            champ_count=Count('id')
+        ).values('champ_count')[:1]
+
+        queryset = queryset.annotate(
+            num_champions=Subquery(subquery_champion_num)
+        )
+
+        queryset = queryset.annotate(championship=Case(
+                                            When(
+                                                standing=1,
+                                                then=ExpressionWrapper(
+                                                    Value(1.0) / F('num_champions'),
+                                                    output_field=FloatField()
+                                                )
+                                            ),
+                                        default=Value(0.0),
+                                        output_field=FloatField(),
+                                        ),
+        )
+
         queryset = queryset.values('team').distinct()
         
         queryset = queryset.annotate(
@@ -106,11 +130,13 @@ class LeaderboardViewSet(ModelViewSet):
                                     avgseed=Avg(F('seed')),
                                     avgstanding=Avg(F('standing')),
                                     avgdraft_pick=Avg(F('draft_pick')),
-                                    championships=Count(F('team'), filter=Case(When(standing=1, then=True), default=False)),
+                                    championships=Sum('championship'),
                                     weeks_won=Subquery(subquery_ww),
                                     seasons_won=Count(F('season_winner'), filter=Case(When(season_winner=True, then=True), default=False)),
                                     divisions_won=Count(F('division_winner'), filter=Case(When(division_winner=True, then=True), default=False))
                                     ).filter(team__active=True).order_by("-championships", "-wins", "avgstanding").values("team__id", "team__first_name", "team__last_name", "pf", "pa", "wins", "losses", "ties", "avgseed", "avgstanding", "avgdraft_pick", "championships", "seasons_won", "divisions_won", "weeks_won")
+        for q in queryset:
+            print(q["championships"])
         return JsonResponse(AllTimeLeaderboardSerializer(queryset, many=True).data, safe=False)
 
     # # Define the base queryset

@@ -401,10 +401,13 @@ class BaseClient(ABC):
                 if team_info[1] == 'L':
                     place = 4
             if team_info[0] in championship_teams:
-                if team_info[1] == 'W':
+                if season_settings.season == 2022:
                     place = 1
-                if team_info[1] == 'L':
-                    place = 2
+                else:
+                    if team_info[1] == 'W':
+                        place = 1
+                    if team_info[1] == 'L':
+                        place = 2
             playoff_team = Leaderboard.objects.get(standing=None, season_settings_id=season_settings.pk, team=team_info[0])
             playoff_team.standing = place
             playoff_team.save()
@@ -527,7 +530,7 @@ class BaseClient(ABC):
             division_tiebreak = "head_to_head"
             seeding_tiebreak = "head_to_head"
             wildcard_tiebreak = "head_to_head"
-        if int(season_settings.season) == 2024:
+        elif int(season_settings.season) == 2024:
             division_tiebreak = "head_to_head"
             seeding_tiebreak = "head_to_head"
             wildcard_tiebreak = "pf"
@@ -535,8 +538,6 @@ class BaseClient(ABC):
             division_tiebreak = "head_to_head"
             seeding_tiebreak = "pf"
             wildcard_tiebreak = "pf"
-
-            
         
         if any([division_tiebreak, seeding_tiebreak, wildcard_tiebreak])=="head_to_head" or num_divisions > 1:
             # Set up head to head record

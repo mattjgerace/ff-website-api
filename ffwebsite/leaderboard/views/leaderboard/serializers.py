@@ -49,7 +49,7 @@ class AllTimeLeaderboardSerializer(ModelSerializer):
     avgseed = DecimalField(max_digits=3, decimal_places=1)
     avgstanding = DecimalField(max_digits=3, decimal_places=1)
     avgdraft_pick = DecimalField(max_digits=3, decimal_places=1)
-    championships = IntegerField()
+    championships = DecimalField(max_digits=2, decimal_places=1)
     seasons_won = IntegerField()
     divisions_won = IntegerField()
     weeks_won = IntegerField()
