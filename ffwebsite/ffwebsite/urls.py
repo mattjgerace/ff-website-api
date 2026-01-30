@@ -38,7 +38,7 @@ urlpatterns = [
     path("api/data/populate-teams/", PopulateNewTeamsView.as_view(), name="populate_teams"),
     path("api/data/populate-draft/", PopulateNewDraftView.as_view(), name="populate_draft"),
     path("api/data/populate-matchups/", PopulateNewMatchupsView.as_view(), name="populate_matchups"),
-    #path("api/data/delete-matchups/", DeleteMatchupsView.as_view(), name="populate_player_collection"),
+    path("api/data/delete-matchups/", DeleteMatchupsView.as_view(), name="delete_matchups"),
     path("api/data/populate-player-collection/", PopulatePlayerCollection.as_view(), name="populate_player_collection"),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]
