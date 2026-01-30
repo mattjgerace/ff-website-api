@@ -539,7 +539,8 @@ class BaseClient(ABC):
             seeding_tiebreak = "pf"
             wildcard_tiebreak = "pf"
         
-        if any([division_tiebreak, seeding_tiebreak, wildcard_tiebreak])=="head_to_head" or num_divisions > 1:
+        if (any(tb == "head_to_head" for tb in [division_tiebreak,seeding_tiebreak,wildcard_tiebreak,])
+                or num_divisions > 1):
             # Set up head to head record
             for standing in standings:
                 head_to_head = {}
