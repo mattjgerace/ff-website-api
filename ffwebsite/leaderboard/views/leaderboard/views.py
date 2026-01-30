@@ -135,8 +135,6 @@ class LeaderboardViewSet(ModelViewSet):
                                     seasons_won=Count(F('season_winner'), filter=Case(When(season_winner=True, then=True), default=False)),
                                     divisions_won=Count(F('division_winner'), filter=Case(When(division_winner=True, then=True), default=False))
                                     ).filter(team__active=True).order_by("-championships", "-wins", "avgstanding").values("team__id", "team__first_name", "team__last_name", "pf", "pa", "wins", "losses", "ties", "avgseed", "avgstanding", "avgdraft_pick", "championships", "seasons_won", "divisions_won", "weeks_won")
-        for q in queryset:
-            print(q["championships"])
         return JsonResponse(AllTimeLeaderboardSerializer(queryset, many=True).data, safe=False)
 
     # # Define the base queryset
