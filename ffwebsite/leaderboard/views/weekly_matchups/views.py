@@ -47,7 +47,7 @@ class WeeklyMatchupsViewSet(ModelViewSet):
 
     queryset =  queryset.select_related('team', 'season_settings')
     
-    subquery_opp = WeeklyMatchups.objects.filter(week=OuterRef('week'), team=OuterRef('opp'), opp=OuterRef('team')).values('score')[:1]
+    subquery_opp = WeeklyMatchups.objects.filter(season_settings=OuterRef("season_settings"), week=OuterRef('week'), team=OuterRef('opp'), opp=OuterRef('team')).values('score')[:1]
 
     queryset = queryset.annotate(season=F('season_settings__season'),
                                 opp_score=Subquery(subquery_opp),
@@ -68,10 +68,6 @@ class WeeklyMatchupsViewSet(ModelViewSet):
                             "ties",
                             "playoff",
                             )
-        
-
-        # for q in queryset:
-        #     print(q["team"], q["team__first_name"], q["team__last_name"], q["season"], q["pf"], q["pa"], q["wins"], q["losses"], q["ties"])
 
     @action(methods=['get'], detail=False, url_path='all-time', url_name='all-time')
     def all_time(self, _request):

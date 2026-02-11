@@ -507,7 +507,11 @@ class BaseClient(ABC):
                                 else:
                                     sorted_group.extend(sorted_sub_group)
                             else:
-                                sorted_group.extend(self.get_seeding(head_to_head_group, "pf"))
+                                teams_sorted_pf = sorted(head_to_head_group.keys(), key=lambda team: (head_to_head_group[team]['wins'], head_to_head_group[team]["pf"]), reverse=True)
+                                top_pf = teams_sorted_pf[0:1]
+                                sorted_group.extend(top_pf)
+                                del head_to_head_group[top_pf[0]]
+                                sorted_group.extend(self.get_seeding(head_to_head_group, "head_to_head"))
                 else:
                     sorted_group = group 
                 final_standing.extend(sorted_group)
@@ -539,7 +543,8 @@ class BaseClient(ABC):
             seeding_tiebreak = "pf"
             wildcard_tiebreak = "pf"
         
-        if any([division_tiebreak, seeding_tiebreak, wildcard_tiebreak])=="head_to_head" or num_divisions > 1:
+        if (any(tb == "head_to_head" for tb in [division_tiebreak,seeding_tiebreak,wildcard_tiebreak,])
+                or num_divisions > 1):
             # Set up head to head record
             for standing in standings:
                 head_to_head = {}
