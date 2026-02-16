@@ -56,7 +56,7 @@ class PopulateNewSeasonView(APIView):
         if SeasonSettings.objects.filter(season = season).exists():
             return Response(
                 {"error": f"'season': {season} in request body is already populated in SeasonSettings table in database"},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_409_CONFLICT,
             )
         client = get_client(platform, season)
         if not client:
